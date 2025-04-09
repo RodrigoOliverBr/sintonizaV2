@@ -1,4 +1,3 @@
-
 import { Company, Department, Employee, JobRole } from "@/types/cadastro";
 
 // Keys for localStorage
@@ -136,11 +135,11 @@ export const getJobRoles = (): JobRole[] => {
   return JSON.parse(jobRoles);
 };
 
-export const addJobRole = (name: string): JobRole => {
+export const addJobRole = (jobRole: Omit<JobRole, "id">): JobRole => {
   const jobRoles = getJobRoles();
   
   // Check for similar names to avoid duplicates
-  const normalizedName = name.toLowerCase().trim();
+  const normalizedName = jobRole.name.toLowerCase().trim();
   const similarExists = jobRoles.some(role => 
     role.name.toLowerCase().trim() === normalizedName
   );
@@ -151,11 +150,19 @@ export const addJobRole = (name: string): JobRole => {
   
   const newRole: JobRole = {
     id: Date.now().toString(),
-    name
+    name: jobRole.name
   };
   
   localStorage.setItem(JOB_ROLES_KEY, JSON.stringify([...jobRoles, newRole]));
   return newRole;
+};
+
+export const updateJobRole = (jobRole: JobRole): void => {
+  const jobRoles = getJobRoles();
+  const updatedRoles = jobRoles.map(role => 
+    role.id === jobRole.id ? jobRole : role
+  );
+  localStorage.setItem(JOB_ROLES_KEY, JSON.stringify(updatedRoles));
 };
 
 export const deleteJobRole = (id: string): void => {

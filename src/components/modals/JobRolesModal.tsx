@@ -83,13 +83,23 @@ const JobRolesModal: React.FC<JobRolesModalProps> = ({
       return;
     }
 
-    addJobRole({ name: newRoleName.trim() });
-    setNewRoleName("");
-    toast({
-      title: "Função adicionada",
-      description: "A função foi adicionada com sucesso",
-    });
-    loadJobRoles();
+    try {
+      addJobRole({ name: newRoleName.trim() });
+      setNewRoleName("");
+      toast({
+        title: "Função adicionada",
+        description: "A função foi adicionada com sucesso",
+      });
+      loadJobRoles();
+    } catch (error) {
+      if (error instanceof Error) {
+        toast({
+          title: "Erro",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const startEditing = (role: JobRole) => {

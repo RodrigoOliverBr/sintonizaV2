@@ -43,9 +43,9 @@ const radarData = simulatedData.map(item => ({
 }));
 
 const getRiskColor = (value: number) => {
-  if (value < 50) return "#4ade80"; // Verde
-  if (value < 70) return "#facc15"; // Amarelo
-  return "#f87171"; // Vermelho
+  if (value <= 20) return "#4ade80"; // Verde para valores até 20%
+  if (value <= 29) return "#facc15"; // Amarelo para valores entre 21% e 29%
+  return "#f87171"; // Vermelho para valores acima de 30%
 };
 
 interface MapaRiscoPsicossocialProps {

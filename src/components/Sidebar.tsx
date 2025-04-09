@@ -11,9 +11,11 @@ import {
   X,
   Building2,
   Users,
+  BarChart2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import SidebarLinks from "./SidebarLinks";
 
 interface SidebarProps {
   className?: string;
@@ -22,42 +24,6 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   const location = useLocation();
   const [isOpen, setIsOpen] = React.useState(false);
-
-  const routes = [
-    {
-      title: "Formulário",
-      href: "/",
-      icon: ClipboardList,
-    },
-    {
-      title: "Como Preencher",
-      href: "/como-preencher",
-      icon: HelpCircle,
-    },
-    {
-      title: "Como Avaliar",
-      href: "/como-avaliar",
-      icon: BookOpen,
-    },
-    {
-      title: "Guia de Mitigações",
-      href: "/mitigacoes",
-      icon: LifeBuoy,
-    },
-  ];
-
-  const cadastrosRoutes = [
-    {
-      title: "Empresas",
-      href: "/cadastros/empresas",
-      icon: Building2,
-    },
-    {
-      title: "Funcionários",
-      href: "/cadastros/funcionarios",
-      icon: Users,
-    },
-  ];
 
   const MobileNav = () => (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -83,56 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
             </Button>
           </div>
           <nav className="flex-1 p-4">
-            <ul className="space-y-2">
-              {routes.map((route) => {
-                const isActive = location.pathname === route.href;
-                return (
-                  <li key={route.href}>
-                    <Link
-                      to={route.href}
-                      className={cn(
-                        "flex items-center space-x-3 rounded-lg px-3 py-2",
-                        isActive
-                          ? "bg-esocial-blue text-white"
-                          : "hover:bg-esocial-lightGray"
-                      )}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <route.icon size={18} />
-                      <span>{route.title}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-
-              <li className="pt-4">
-                <div className="px-3 py-2 text-sm font-medium text-muted-foreground">
-                  Cadastros
-                </div>
-                <ul className="mt-1 space-y-1">
-                  {cadastrosRoutes.map((route) => {
-                    const isActive = location.pathname === route.href;
-                    return (
-                      <li key={route.href}>
-                        <Link
-                          to={route.href}
-                          className={cn(
-                            "flex items-center space-x-3 rounded-lg px-3 py-2",
-                            isActive
-                              ? "bg-esocial-blue text-white"
-                              : "hover:bg-esocial-lightGray"
-                          )}
-                          onClick={() => setIsOpen(false)}
-                        >
-                          <route.icon size={18} />
-                          <span>{route.title}</span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </li>
-            </ul>
+            <SidebarLinks />
           </nav>
         </div>
       </SheetContent>
@@ -159,58 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           </div>
           <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
             <nav className="mt-5 flex-1 px-4 space-y-1">
-              {routes.map((route) => {
-                const isActive = location.pathname === route.href;
-                return (
-                  <Link
-                    key={route.href}
-                    to={route.href}
-                    className={cn(
-                      "group flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer",
-                      isActive
-                        ? "bg-esocial-blue text-white"
-                        : "text-esocial-darkGray hover:bg-esocial-lightGray"
-                    )}
-                  >
-                    <route.icon
-                      className={cn(
-                        "mr-3 flex-shrink-0 h-5 w-5",
-                        isActive ? "text-white" : "text-esocial-darkGray"
-                      )}
-                    />
-                    {route.title}
-                  </Link>
-                );
-              })}
-
-              <div className="pt-6">
-                <div className="px-4 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Cadastros
-                </div>
-                {cadastrosRoutes.map((route) => {
-                  const isActive = location.pathname === route.href;
-                  return (
-                    <Link
-                      key={route.href}
-                      to={route.href}
-                      className={cn(
-                        "group flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer",
-                        isActive
-                          ? "bg-esocial-blue text-white"
-                          : "text-esocial-darkGray hover:bg-esocial-lightGray"
-                      )}
-                    >
-                      <route.icon
-                        className={cn(
-                          "mr-3 flex-shrink-0 h-5 w-5",
-                          isActive ? "text-white" : "text-esocial-darkGray"
-                        )}
-                      />
-                      {route.title}
-                    </Link>
-                  );
-                })}
-              </div>
+              <SidebarLinks />
             </nav>
           </div>
           <div className="flex-shrink-0 flex border-t p-4">

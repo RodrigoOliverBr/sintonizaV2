@@ -35,13 +35,6 @@ const navSections: NavSection[] = [
         title: "Como Avaliar",
         href: "/como-avaliar",
         icon: BookOpen,
-        subItems: [
-          {
-            title: "Sobre o Formulário",
-            href: "/sobre",
-            icon: Info,
-          }
-        ]
       },
       {
         title: "Mitigações",

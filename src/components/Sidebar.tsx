@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -38,11 +39,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       title: "Como Avaliar",
       href: "/como-avaliar",
       icon: BookOpen,
-    },
-    {
-      title: "Sobre o Formulário",
-      href: "/sobre",
-      icon: Info,
     },
     {
       title: "Guia de Mitigações",

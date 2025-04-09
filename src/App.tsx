@@ -12,7 +12,6 @@ import Mitigacoes from "./pages/Mitigacoes";
 import CompaniesPage from "./pages/CompaniesPage";
 import EmployeesPage from "./pages/EmployeesPage";
 import NotFound from "./pages/NotFound";
-import Index from "./pages/Index";
 
 const queryClient = new QueryClient();
 
@@ -23,8 +22,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/formulario" element={<FormularioPage />} />
+          <Route path="/" element={<FormularioPage />} />
           <Route path="/como-preencher" element={<ComoPreencher />} />
           <Route path="/como-avaliar" element={<ComoAvaliar />} />
           <Route path="/sobre" element={<Sobre />} />

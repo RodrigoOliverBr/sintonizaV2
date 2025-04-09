@@ -62,8 +62,12 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    setCompanies(getCompanies());
-    setJobRoles(getJobRoles());
+    // Ensure we're getting valid arrays or defaulting to empty arrays
+    const loadedCompanies = getCompanies() || [];
+    setCompanies(loadedCompanies);
+    
+    const loadedJobRoles = getJobRoles() || [];
+    setJobRoles(loadedJobRoles);
     
     if (preselectedCompanyId) {
       setCompanyId(preselectedCompanyId);
@@ -72,8 +76,13 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
   }, [preselectedCompanyId]);
 
   const loadDepartments = (companyId: string) => {
+    if (!companyId) {
+      setDepartments([]);
+      return;
+    }
+    
     const company = companies.find(c => c.id === companyId);
-    if (company) {
+    if (company && company.departments) {
       setDepartments(company.departments);
     } else {
       setDepartments([]);
@@ -146,6 +155,11 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
     onOpenChange(false);
     if (onEmployeeAdded) onEmployeeAdded();
   };
+
+  // Only render dialog content when dialog is open to avoid command component issues
+  if (!open) {
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

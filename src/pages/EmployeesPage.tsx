@@ -35,13 +35,18 @@ const EmployeesPage: React.FC = () => {
   }, [selectedCompanyId]);
 
   const loadData = () => {
-    setCompanies(getCompanies());
+    // Ensure we're setting companies to an empty array if null is returned
+    const loadedCompanies = getCompanies();
+    setCompanies(loadedCompanies || []);
     
+    // Ensure we're setting employees to an empty array if null is returned
     const allEmployees = getEmployees();
+    const loadedEmployees = allEmployees || [];
+    
     if (selectedCompanyId && selectedCompanyId !== "all") {
-      setEmployees(allEmployees.filter(e => e.companyId === selectedCompanyId));
+      setEmployees(loadedEmployees.filter(e => e.companyId === selectedCompanyId));
     } else {
-      setEmployees(allEmployees);
+      setEmployees(loadedEmployees);
     }
   };
 
@@ -156,12 +161,14 @@ const EmployeesPage: React.FC = () => {
         </div>
       </div>
 
-      <NewEmployeeModal
-        open={isNewEmployeeModalOpen}
-        onOpenChange={setIsNewEmployeeModalOpen}
-        onEmployeeAdded={handleEmployeeAdded}
-        preselectedCompanyId={selectedCompanyId !== "all" ? selectedCompanyId : undefined}
-      />
+      {isNewEmployeeModalOpen && (
+        <NewEmployeeModal
+          open={isNewEmployeeModalOpen}
+          onOpenChange={setIsNewEmployeeModalOpen}
+          onEmployeeAdded={handleEmployeeAdded}
+          preselectedCompanyId={selectedCompanyId !== "all" ? selectedCompanyId : undefined}
+        />
+      )}
     </Layout>
   );
 };

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -23,8 +22,8 @@ import { BarChart } from "@/components/ui/BarChart";
 import { getFormResults, getEmployeesByCompany, getDepartmentsByCompany } from "@/services/storageService";
 import { formData } from "@/data/formData";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { Separator } from "@/components/ui/separator";
 
-// Dados simulados para os gráficos
 const dimensoes = [
   "Demandas Psicológicas", 
   "Organização e Gestão do Trabalho", 
@@ -35,7 +34,6 @@ const dimensoes = [
   "Assédio Moral e Sexual"
 ];
 
-// Dados simulados de perguntas para cada dimensão
 const perguntasPorDimensao = {
   "Demandas Psicológicas": [
     "Há sobrecarga de trabalho?",
@@ -96,7 +94,18 @@ const getRiskColor = (value: number) => {
   return "#f87171"; // Vermelho para valores acima de 30%
 };
 
-// Custom label component for the X Axis
+const getBackgroundColor = (value: number) => {
+  if (value <= 20) return "bg-green-100"; // Verde claro para valores até 20%
+  if (value <= 29) return "bg-yellow-100"; // Amarelo claro para valores entre 21% e 29%
+  return "bg-red-100"; // Vermelho claro para valores acima de 30%
+};
+
+const getTextColor = (value: number) => {
+  if (value <= 20) return "text-green-800"; // Verde escuro para valores até 20%
+  if (value <= 29) return "text-yellow-800"; // Amarelo escuro para valores entre 21% e 29%
+  return "text-red-800"; // Vermelho escuro para valores acima de 30%
+};
+
 const CustomizedAxisTick = (props: any) => {
   const { x, y, payload } = props;
   
@@ -169,84 +178,54 @@ export default function MapaRiscoPsicossocial({
           <CardTitle className="text-lg">Percentual de Respostas Positivas por Dimensão</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <RechartBarChart
-                data={barData}
-                layout="vertical"
-                margin={{ top: 20, right: 30, left: 150, bottom: 20 }}
-                barSize={20}
-              >
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e0e0e0" />
-                <XAxis 
-                  type="number" 
-                  domain={[0, 100]} 
-                  ticks={[0, 20, 30, 50, 70, 100]} 
-                  tick={<CustomizedAxisTick />}
-                  stroke="#666"
-                  axisLine={{ stroke: '#e0e0e0' }}
-                  tickLine={{ stroke: '#e0e0e0' }}
-                />
-                <YAxis 
-                  dataKey="dimensao" 
-                  type="category" 
-                  width={150}
-                  tick={{ fontSize: 12, fill: '#666' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip 
-                  formatter={(value) => [`${value}%`, "Respostas Positivas"]} 
-                  contentStyle={{ 
-                    border: '1px solid #e0e0e0', 
-                    borderRadius: '4px', 
-                    backgroundColor: 'white',
-                    fontSize: '12px',
-                    padding: '8px'
-                  }}
-                  labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
-                />
-                <ReferenceLine 
-                  x={20} 
-                  stroke="#4ade80" 
-                  strokeWidth={1.5} 
-                  strokeDasharray="5 5" 
-                  label={{ 
-                    value: "20%", 
-                    position: "top", 
-                    fill: "#4ade80",
-                    fontSize: 12 
-                  }} 
-                />
-                <ReferenceLine 
-                  x={30} 
-                  stroke="#f87171" 
-                  strokeWidth={1.5} 
-                  strokeDasharray="5 5" 
-                  label={{ 
-                    value: "30%", 
-                    position: "top", 
-                    fill: "#f87171", 
-                    fontSize: 12 
-                  }} 
-                />
-                <Bar 
-                  dataKey="percentual" 
-                  radius={[0, 4, 4, 0]}
-                  label={{ 
-                    position: 'right', 
-                    formatter: (value: number) => `${value}%`,
-                    fill: '#666',
-                    fontSize: 11,
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {barData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={getRiskColor(entry.percentual)} />
-                  ))}
-                </Bar>
-              </RechartBarChart>
-            </ResponsiveContainer>
+          <div className="flex items-center mb-4 justify-between">
+            <div className="flex items-center">
+              <span className="inline-block w-4 h-4 bg-green-500 rounded-sm mr-1"></span>
+              <span className="text-xs text-gray-600 mr-4">Baixo risco (≤ 20%)</span>
+              
+              <span className="inline-block w-4 h-4 bg-yellow-400 rounded-sm mr-1"></span>
+              <span className="text-xs text-gray-600 mr-4">Atenção (21% - 29%)</span>
+              
+              <span className="inline-block w-4 h-4 bg-red-500 rounded-sm mr-1"></span>
+              <span className="text-xs text-gray-600">Crítico (≥ 30%)</span>
+            </div>
+          </div>
+          
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Dimensão</TableHead>
+                <TableHead className="text-center">Percentual</TableHead>
+                <TableHead className="text-center">Escala Visual</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {barData.map((item, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-medium">{item.dimensao}</TableCell>
+                  <TableCell className={`text-center font-bold ${getTextColor(item.percentual)}`}>
+                    {item.percentual}%
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <div className="w-full bg-gray-200 rounded-full h-4">
+                        <div 
+                          className={`h-4 rounded-full`}
+                          style={{ 
+                            width: `${item.percentual}%`, 
+                            backgroundColor: getRiskColor(item.percentual)
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          
+          <div className="mt-4 text-xs text-gray-500">
+            <p>* Quanto menor o percentual de respostas positivas, maior o risco psicossocial na dimensão.</p>
           </div>
         </CardContent>
       </Card>

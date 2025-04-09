@@ -1,7 +1,7 @@
 
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { Building2, ClipboardList, FileQuestion, FileSearch, FileText, Users, BarChart2 } from "lucide-react";
+import { Building2, ClipboardList, FileQuestion, FileSearch, FileText, Users, BarChart2, BookOpen } from "lucide-react";
 
 const SidebarLinks: React.FC = () => {
   const activeClassName = 
@@ -24,7 +24,7 @@ const SidebarLinks: React.FC = () => {
         to="/como-preencher" 
         className={({ isActive }) => isActive ? activeClassName : inactiveClassName}
       >
-        <FileQuestion size={20} />
+        <BookOpen size={20} />
         <span>Como Preencher</span>
       </NavLink>
       

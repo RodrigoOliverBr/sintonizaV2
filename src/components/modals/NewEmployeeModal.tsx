@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,7 +70,6 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    // Ensure we're getting valid arrays or defaulting to empty arrays
     const loadedCompanies = getCompanies() || [];
     setCompanies(loadedCompanies);
     
@@ -116,10 +114,8 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
   };
 
   const formatCPF = (value: string) => {
-    // Remove non-digits
     const digits = value.replace(/\D/g, "");
     
-    // Apply CPF mask (XXX.XXX.XXX-XX)
     if (digits.length <= 3) {
       return digits;
     } else if (digits.length <= 6) {
@@ -176,7 +172,6 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
     if (onEmployeeAdded) onEmployeeAdded();
   };
 
-  // Handle job role selection
   const handleRoleSelect = (value: string) => {
     const role = jobRoles.find(r => r.name.toLowerCase() === value.toLowerCase());
     if (role) {
@@ -191,12 +186,10 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
     }
   };
 
-  // Only render dialog content when dialog is open to avoid command component issues
   if (!open) {
     return null;
   }
 
-  // Check if departments or roles are empty
   const hasDepartments = departments.length > 0;
   const hasRoles = jobRoles.length > 0;
 
@@ -326,7 +319,7 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
                                   <CommandItem
                                     key={role.id}
                                     value={role.name}
-                                    onSelect={handleRoleSelect}
+                                    onSelect={(value) => handleRoleSelect(value)}
                                   >
                                     <Check
                                       className={cn(

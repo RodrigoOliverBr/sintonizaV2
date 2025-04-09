@@ -1,11 +1,10 @@
-
 import React from "react";
 import { FormResult, SeverityLevel } from "@/types/form";
 import { formData } from "@/data/formData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { BarChart } from "@/components/ui/chart";
+import { BarChart } from "@/components/ui/BarChart";
 import { Button } from "@/components/ui/button";
 import { Download, Printer } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";

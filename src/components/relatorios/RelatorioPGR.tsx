@@ -3,7 +3,15 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle, Clock, FileDown } from "lucide-react";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue, 
+} from "@/components/ui/select";
 import { getCompanyById, getJobRolesByCompany } from "@/services/storageService";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -46,6 +54,12 @@ export default function RelatorioPGR({
   // Estado para armazenar o responsável editável
   const [responsaveis, setResponsaveis] = useState<Record<string, string>>({});
   
+  // Estado para armazenar o prazo selecionado para cada risco
+  const [prazos, setPrazos] = useState<Record<string, string>>({});
+  
+  // Estado para armazenar as medidas de controle editáveis
+  const [medidasControle, setMedidasControle] = useState<Record<string, string[]>>({});
+  
   // Função para atualizar o responsável de um risco específico
   const handleResponsavelChange = (riscoId: string, value: string) => {
     setResponsaveis(prev => ({
@@ -53,6 +67,33 @@ export default function RelatorioPGR({
       [riscoId]: value
     }));
   };
+  
+  // Função para atualizar o prazo de um risco específico
+  const handlePrazoChange = (riscoId: string, value: string) => {
+    setPrazos(prev => ({
+      ...prev,
+      [riscoId]: value
+    }));
+  };
+  
+  // Função para atualizar as medidas de controle
+  const handleMedidasControleChange = (riscoId: string, value: string) => {
+    const medidas = value.split('\n').filter(item => item.trim() !== '');
+    setMedidasControle(prev => ({
+      ...prev,
+      [riscoId]: medidas
+    }));
+  };
+  
+  // Opções de prazo
+  const prazoOptions = [
+    { value: "30 dias", label: "30 dias" },
+    { value: "60 dias", label: "60 dias" },
+    { value: "90 dias", label: "90 dias" },
+    { value: "6 meses", label: "6 meses" },
+    { value: "9 meses", label: "9 meses" },
+    { value: "12 meses", label: "12 meses" },
+  ];
   
   // Dados simulados de riscos psicossociais para o PGR
   const riscos: RiscoItem[] = [
@@ -183,6 +224,16 @@ export default function RelatorioPGR({
     return "bg-green-100 text-green-700 border-green-200";
   };
   
+  // Função para criar o texto das medidas de controle para exibir no textarea
+  const getMedidasControleText = (riscoId: string, medidasOriginais: string[]) => {
+    // Se já houver medidas editadas pelo usuário, retorna as editadas
+    if (medidasControle[riscoId]) {
+      return medidasControle[riscoId].join('\n');
+    }
+    // Senão, retorna as medidas originais
+    return medidasOriginais.join('\n');
+  };
+  
   const exportPGR = () => {
     console.log("Exportando relatório PGR para PDF");
     // Implementação da exportação para PDF
@@ -285,11 +336,12 @@ export default function RelatorioPGR({
               
               <div className="mt-6">
                 <h4 className="text-sm font-semibold mb-2">Medidas de Controle:</h4>
-                <ul className="list-disc pl-5 space-y-1">
-                  {risco.medidasControle.map((medida, idx) => (
-                    <li key={idx} className="text-gray-700">{medida}</li>
-                  ))}
-                </ul>
+                <Textarea 
+                  value={getMedidasControleText(risco.id, risco.medidasControle)}
+                  onChange={(e) => handleMedidasControleChange(risco.id, e.target.value)}
+                  className="min-h-[120px] w-full mt-2"
+                  placeholder="Adicione medidas de controle separadas por linha"
+                />
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
@@ -298,7 +350,21 @@ export default function RelatorioPGR({
                     <Clock className="h-4 w-4 mr-1 text-gray-500" />
                     Prazo para Implementação:
                   </h4>
-                  <p className="font-medium">{risco.prazo}</p>
+                  <Select 
+                    value={prazos[risco.id] || risco.prazo}
+                    onValueChange={(value) => handlePrazoChange(risco.id, value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione um prazo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {prazoOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div>

@@ -10,6 +10,10 @@ import {
   BookOpen,
   Menu,
   X,
+  Building2,
+  Users,
+  List,
+  FolderTree,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -47,6 +51,24 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       title: "Guia de Mitigações",
       href: "/mitigacoes",
       icon: LifeBuoy,
+    },
+  ];
+
+  const cadastrosRoutes = [
+    {
+      title: "Empresas",
+      href: "/cadastros/empresas",
+      icon: Building2,
+    },
+    {
+      title: "Funcionários",
+      href: "/cadastros/funcionarios",
+      icon: Users,
+    },
+    {
+      title: "Setores",
+      href: "/cadastros/setores",
+      icon: FolderTree,
     },
   ];
 
@@ -95,6 +117,34 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                   </li>
                 );
               })}
+
+              <li className="pt-4">
+                <div className="px-3 py-2 text-sm font-medium text-muted-foreground">
+                  Cadastros
+                </div>
+                <ul className="mt-1 space-y-1">
+                  {cadastrosRoutes.map((route) => {
+                    const isActive = location.pathname === route.href;
+                    return (
+                      <li key={route.href}>
+                        <Link
+                          to={route.href}
+                          className={cn(
+                            "flex items-center space-x-3 rounded-lg px-3 py-2",
+                            isActive
+                              ? "bg-esocial-blue text-white"
+                              : "hover:bg-esocial-lightGray"
+                          )}
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <route.icon size={18} />
+                          <span>{route.title}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </li>
             </ul>
           </nav>
         </div>
@@ -145,6 +195,35 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                   </Link>
                 );
               })}
+
+              <div className="pt-6">
+                <div className="px-4 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Cadastros
+                </div>
+                {cadastrosRoutes.map((route) => {
+                  const isActive = location.pathname === route.href;
+                  return (
+                    <Link
+                      key={route.href}
+                      to={route.href}
+                      className={cn(
+                        "group flex items-center px-4 py-3 text-sm font-medium rounded-md",
+                        isActive
+                          ? "bg-esocial-blue text-white"
+                          : "text-esocial-darkGray hover:bg-esocial-lightGray"
+                      )}
+                    >
+                      <route.icon
+                        className={cn(
+                          "mr-3 flex-shrink-0 h-5 w-5",
+                          isActive ? "text-white" : "text-esocial-darkGray"
+                        )}
+                      />
+                      {route.title}
+                    </Link>
+                  );
+                })}
+              </div>
             </nav>
           </div>
           <div className="flex-shrink-0 flex border-t p-4">

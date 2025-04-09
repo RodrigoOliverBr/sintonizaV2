@@ -9,6 +9,9 @@ import ComoPreencher from "./pages/ComoPreencher";
 import ComoAvaliar from "./pages/ComoAvaliar";
 import Sobre from "./pages/Sobre";
 import Mitigacoes from "./pages/Mitigacoes";
+import CompaniesPage from "./pages/CompaniesPage";
+import EmployeesPage from "./pages/EmployeesPage";
+import DepartmentsPage from "./pages/DepartmentsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +28,9 @@ const App = () => (
           <Route path="/como-avaliar" element={<ComoAvaliar />} />
           <Route path="/sobre" element={<Sobre />} />
           <Route path="/mitigacoes" element={<Mitigacoes />} />
+          <Route path="/cadastros/empresas" element={<CompaniesPage />} />
+          <Route path="/cadastros/funcionarios" element={<EmployeesPage />} />
+          <Route path="/cadastros/setores" element={<DepartmentsPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

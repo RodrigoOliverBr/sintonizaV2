@@ -10,6 +10,7 @@ export type FormSection = {
 export type Question = {
   id: number;
   text: string;
+  risk: string; // Added risk field
   severity: SeverityLevel;
   mitigationActions: string[];
   options?: { label: string; value: string }[];

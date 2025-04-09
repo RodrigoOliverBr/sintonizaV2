@@ -34,6 +34,9 @@ const QuestionComponent: React.FC<QuestionComponentProps> = ({
         <div className="flex flex-col space-y-4">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-2">
             <div className="flex-1">
+              <div className="text-sm font-medium text-esocial-blue mb-2">
+                Risco: {question.risk}
+              </div>
               <h3 className="text-base font-medium mb-2">{question.text}</h3>
               <div className="mb-4">
                 <SeverityBadge severity={question.severity} />

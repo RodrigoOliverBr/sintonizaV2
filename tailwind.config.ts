@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,18 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Cores do eSocial Brasil
+				esocial: {
+					blue: '#1EAEDB',
+					lightGray: '#F1F1F1',
+					gray: '#C8C8C9',
+					darkGray: '#333333'
+				},
+				severity: {
+					light: '#FFD700',    // Levemente prejudicial (amarelo)
+					medium: '#FF8C00',   // Prejudicial (laranja)
+					high: '#FF4500'      // Extremamente prejudicial (vermelho)
 				}
 			},
 			borderRadius: {

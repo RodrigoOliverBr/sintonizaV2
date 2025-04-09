@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,21 +11,23 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addDepartment } from "@/services/storageService";
+import { addDepartmentToCompany } from "@/services/storageService";
 import { useToast } from "@/hooks/use-toast";
 
 interface NewDepartmentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDepartmentAdded?: () => void;
+  companyId: string;
 }
 
 const NewDepartmentModal: React.FC<NewDepartmentModalProps> = ({
   open,
   onOpenChange,
   onDepartmentAdded,
+  companyId,
 }) => {
-  const [name, setName] = React.useState("");
+  const [name, setName] = useState("");
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -40,16 +42,24 @@ const NewDepartmentModal: React.FC<NewDepartmentModalProps> = ({
       return;
     }
 
-    addDepartment({ name });
-    
-    toast({
-      title: "Sucesso",
-      description: "Setor cadastrado com sucesso!",
-    });
-    
-    setName("");
-    onOpenChange(false);
-    if (onDepartmentAdded) onDepartmentAdded();
+    try {
+      addDepartmentToCompany(companyId, name);
+      
+      toast({
+        title: "Sucesso",
+        description: "Setor cadastrado com sucesso!",
+      });
+      
+      setName("");
+      onOpenChange(false);
+      if (onDepartmentAdded) onDepartmentAdded();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao adicionar setor",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

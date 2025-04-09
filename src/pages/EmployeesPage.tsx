@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
-import { Company, Employee } from "@/types/cadastro";
-import { getCompanies, getEmployees } from "@/services/storageService";
+import { Company, Employee, JobRole } from "@/types/cadastro";
+import { getCompanies, getEmployees, getJobRoleById, getDepartmentById, getCompanyById } from "@/services/storageService";
 import {
   Table,
   TableBody,
@@ -61,6 +61,19 @@ const EmployeesPage: React.FC = () => {
 
   const handleEmployeeAdded = () => {
     loadData();
+  };
+
+  const getDepartmentName = (employee: Employee) => {
+    const company = companies.find(c => c.id === employee.companyId);
+    if (!company) return "N/A";
+    
+    const department = company.departments.find(d => d.id === employee.departmentId);
+    return department ? department.name : "N/A";
+  };
+
+  const getJobRoleName = (roleId: string) => {
+    const role = getJobRoleById(roleId);
+    return role ? role.name : "N/A";
   };
 
   return (
@@ -123,9 +136,9 @@ const EmployeesPage: React.FC = () => {
                     <TableRow key={employee.id}>
                       <TableCell>{employee.name}</TableCell>
                       <TableCell>{employee.cpf}</TableCell>
-                      <TableCell>{employee.role}</TableCell>
+                      <TableCell>{getJobRoleName(employee.roleId)}</TableCell>
                       <TableCell>{company ? company.name : "N/A"}</TableCell>
-                      <TableCell>{employee.departmentId}</TableCell>
+                      <TableCell>{getDepartmentName(employee)}</TableCell>
                     </TableRow>
                   );
                 })

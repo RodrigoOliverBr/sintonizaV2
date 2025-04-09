@@ -18,8 +18,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { addEmployee, getCompanies, getDepartments } from "@/services/storageService";
-import { Company, Department } from "@/types/cadastro";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { 
+  addEmployee, 
+  getCompanies, 
+  getDepartmentsByCompany,
+  getJobRoles
+} from "@/services/storageService";
+import { Company, Department, JobRole } from "@/types/cadastro";
 import { useToast } from "@/hooks/use-toast";
 
 interface NewEmployeeModalProps {
@@ -37,23 +50,41 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
 }) => {
   const [name, setName] = useState("");
   const [cpf, setCpf] = useState("");
-  const [role, setRole] = useState("");
+  const [roleId, setRoleId] = useState("");
   const [companyId, setCompanyId] = useState(preselectedCompanyId || "");
   const [departmentId, setDepartmentId] = useState("");
   
   const [companies, setCompanies] = useState<Company[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [jobRoles, setJobRoles] = useState<JobRole[]>([]);
+  const [openRoleCombobox, setOpenRoleCombobox] = useState(false);
   
   const { toast } = useToast();
 
   useEffect(() => {
     setCompanies(getCompanies());
-    setDepartments(getDepartments());
+    setJobRoles(getJobRoles());
     
     if (preselectedCompanyId) {
       setCompanyId(preselectedCompanyId);
+      loadDepartments(preselectedCompanyId);
     }
   }, [preselectedCompanyId]);
+
+  const loadDepartments = (companyId: string) => {
+    const company = companies.find(c => c.id === companyId);
+    if (company) {
+      setDepartments(company.departments);
+    } else {
+      setDepartments([]);
+    }
+    setDepartmentId("");
+  };
+
+  const handleCompanyChange = (value: string) => {
+    setCompanyId(value);
+    loadDepartments(value);
+  };
 
   const formatCPF = (value: string) => {
     // Remove non-digits
@@ -79,7 +110,7 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
   const resetForm = () => {
     setName("");
     setCpf("");
-    setRole("");
+    setRoleId("");
     if (!preselectedCompanyId) {
       setCompanyId("");
     }
@@ -89,7 +120,7 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim() || !cpf.trim() || !role.trim() || !companyId || !departmentId) {
+    if (!name.trim() || !cpf.trim() || !roleId || !companyId || !departmentId) {
       toast({
         title: "Erro",
         description: "Todos os campos são obrigatórios",
@@ -101,7 +132,7 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
     addEmployee({
       name,
       cpf,
-      role,
+      roleId,
       companyId,
       departmentId
     });
@@ -153,22 +184,11 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="text-right">
-                Função
-              </Label>
-              <Input
-                id="role"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="company" className="text-right">
                 Empresa
               </Label>
               <div className="col-span-3">
-                <Select value={companyId} onValueChange={setCompanyId}>
+                <Select value={companyId} onValueChange={handleCompanyChange} disabled={!!preselectedCompanyId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma empresa" />
                   </SelectTrigger>
@@ -187,9 +207,19 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
                 Setor
               </Label>
               <div className="col-span-3">
-                <Select value={departmentId} onValueChange={setDepartmentId}>
+                <Select 
+                  value={departmentId} 
+                  onValueChange={setDepartmentId}
+                  disabled={!companyId || departments.length === 0}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione um setor" />
+                    <SelectValue placeholder={
+                      !companyId 
+                        ? "Selecione uma empresa primeiro" 
+                        : departments.length === 0
+                        ? "Nenhum setor disponível"
+                        : "Selecione um setor"
+                    } />
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map((department) => (
@@ -199,6 +229,54 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="role" className="text-right">
+                Função
+              </Label>
+              <div className="col-span-3">
+                <Popover open={openRoleCombobox} onOpenChange={setOpenRoleCombobox}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openRoleCombobox}
+                      className="w-full justify-between"
+                    >
+                      {roleId
+                        ? jobRoles.find((role) => role.id === roleId)?.name
+                        : "Selecione uma função..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar função..." />
+                      <CommandEmpty>Nenhuma função encontrada.</CommandEmpty>
+                      <CommandGroup className="max-h-60 overflow-y-auto">
+                        {jobRoles.map((role) => (
+                          <CommandItem
+                            key={role.id}
+                            value={role.name}
+                            onSelect={() => {
+                              setRoleId(role.id === roleId ? "" : role.id);
+                              setOpenRoleCombobox(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                roleId === role.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {role.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
           </div>

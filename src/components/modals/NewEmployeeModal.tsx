@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +23,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { 
+  Command, 
+  CommandEmpty, 
+  CommandGroup, 
+  CommandInput, 
+  CommandItem,
+  CommandList
+} from "@/components/ui/command";
 import { Check, ChevronsUpDown, Plus, FolderX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { 
@@ -286,27 +294,29 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
                         {hasRoles ? (
                           <Command>
                             <CommandInput placeholder="Buscar função..." />
-                            <CommandEmpty>Nenhuma função encontrada.</CommandEmpty>
-                            <CommandGroup className="max-h-60 overflow-y-auto">
-                              {jobRoles.map((role) => (
-                                <CommandItem
-                                  key={role.id}
-                                  value={role.name}
-                                  onSelect={() => {
-                                    setRoleId(role.id === roleId ? "" : role.id);
-                                    setOpenRoleCombobox(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      roleId === role.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  {role.name}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
+                            <CommandList>
+                              <CommandEmpty>Nenhuma função encontrada.</CommandEmpty>
+                              <CommandGroup className="max-h-60 overflow-y-auto">
+                                {jobRoles.map((role) => (
+                                  <CommandItem
+                                    key={role.id}
+                                    value={role.name}
+                                    onSelect={() => {
+                                      setRoleId(role.id === roleId ? "" : role.id);
+                                      setOpenRoleCombobox(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        roleId === role.id ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {role.name}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
                           </Command>
                         ) : (
                           <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">

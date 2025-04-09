@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -12,8 +11,7 @@ import {
   X,
   Building2,
   Users,
-  List,
-  FolderTree,
+  Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -66,9 +64,9 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       icon: Users,
     },
     {
-      title: "Setores",
-      href: "/cadastros/setores",
-      icon: FolderTree,
+      title: "Funções",
+      href: "/cadastros/funcoes",
+      icon: Briefcase,
     },
   ];
 

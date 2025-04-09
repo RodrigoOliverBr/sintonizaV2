@@ -38,7 +38,8 @@ const CompaniesPage: React.FC = () => {
   const { toast } = useToast();
 
   const loadCompanies = () => {
-    setCompanies(getCompanies());
+    const loadedCompanies = getCompanies();
+    setCompanies(loadedCompanies || []);
   };
 
   useEffect(() => {
@@ -126,9 +127,7 @@ const CompaniesPage: React.FC = () => {
                   <AccordionContent>
                     <div className="pl-4 pr-4 pb-4">
                       <h3 className="text-sm font-medium mb-2">Setores</h3>
-                      {company.departments.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">Nenhum setor cadastrado</p>
-                      ) : (
+                      {company.departments && company.departments.length > 0 ? (
                         <Table>
                           <TableHeader>
                             <TableRow>
@@ -153,6 +152,8 @@ const CompaniesPage: React.FC = () => {
                             ))}
                           </TableBody>
                         </Table>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Nenhum setor cadastrado</p>
                       )}
                     </div>
                   </AccordionContent>

@@ -3,7 +3,6 @@ import { Company, Department, Employee, JobRole } from "@/types/cadastro";
 
 // Keys for localStorage
 const COMPANIES_KEY = "istas21:companies";
-const DEPARTMENTS_KEY = "istas21:departments";
 const EMPLOYEES_KEY = "istas21:employees";
 const JOB_ROLES_KEY = "istas21:jobRoles";
 

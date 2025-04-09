@@ -16,7 +16,8 @@ import {
   YAxis,
   CartesianGrid,
   Cell,
-  ReferenceLine
+  ReferenceLine,
+  Text
 } from "recharts";
 import { BarChart } from "@/components/ui/BarChart";
 import { getFormResults, getEmployeesByCompany, getDepartmentsByCompany } from "@/services/storageService";
@@ -95,6 +96,24 @@ const getRiskColor = (value: number) => {
   return "#f87171"; // Vermelho para valores acima de 30%
 };
 
+// Custom label component for the X Axis
+const CustomizedAxisTick = (props: any) => {
+  const { x, y, payload } = props;
+  
+  return (
+    <Text 
+      x={x} 
+      y={y} 
+      textAnchor="middle" 
+      verticalAnchor="start" 
+      fontSize={12}
+      fill="#666"
+    >
+      {payload.value}
+    </Text>
+  );
+};
+
 interface MapaRiscoPsicossocialProps {
   companyId: string;
   departmentId: string;
@@ -155,24 +174,73 @@ export default function MapaRiscoPsicossocial({
               <RechartBarChart
                 data={barData}
                 layout="vertical"
-                margin={{ top: 20, right: 30, left: 150, bottom: 5 }}
+                margin={{ top: 20, right: 30, left: 150, bottom: 20 }}
+                barSize={20}
               >
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e0e0e0" />
                 <XAxis 
                   type="number" 
                   domain={[0, 100]} 
-                  ticks={[0, 20, 30, 50, 70, 90, 100]} 
+                  ticks={[0, 20, 30, 50, 70, 100]} 
+                  tick={<CustomizedAxisTick />}
+                  stroke="#666"
+                  axisLine={{ stroke: '#e0e0e0' }}
+                  tickLine={{ stroke: '#e0e0e0' }}
                 />
                 <YAxis 
                   dataKey="dimensao" 
                   type="category" 
-                  width={140}
-                  tick={{ fontSize: 12 }}
+                  width={150}
+                  tick={{ fontSize: 12, fill: '#666' }}
+                  axisLine={false}
+                  tickLine={false}
                 />
-                <Tooltip formatter={(value) => [`${value}%`, "Respostas Positivas"]} />
-                <ReferenceLine x={20} stroke="#4ade80" strokeWidth={2} strokeDasharray="3 3" label={{ value: "20%", position: "top" }} />
-                <ReferenceLine x={30} stroke="#f87171" strokeWidth={2} strokeDasharray="3 3" label={{ value: "30%", position: "top" }} />
-                <Bar dataKey="percentual" radius={[0, 4, 4, 0]}>
+                <Tooltip 
+                  formatter={(value) => [`${value}%`, "Respostas Positivas"]} 
+                  contentStyle={{ 
+                    border: '1px solid #e0e0e0', 
+                    borderRadius: '4px', 
+                    backgroundColor: 'white',
+                    fontSize: '12px',
+                    padding: '8px'
+                  }}
+                  labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
+                />
+                <ReferenceLine 
+                  x={20} 
+                  stroke="#4ade80" 
+                  strokeWidth={1.5} 
+                  strokeDasharray="5 5" 
+                  label={{ 
+                    value: "20%", 
+                    position: "top", 
+                    fill: "#4ade80",
+                    fontSize: 12 
+                  }} 
+                />
+                <ReferenceLine 
+                  x={30} 
+                  stroke="#f87171" 
+                  strokeWidth={1.5} 
+                  strokeDasharray="5 5" 
+                  label={{ 
+                    value: "30%", 
+                    position: "top", 
+                    fill: "#f87171", 
+                    fontSize: 12 
+                  }} 
+                />
+                <Bar 
+                  dataKey="percentual" 
+                  radius={[0, 4, 4, 0]}
+                  label={{ 
+                    position: 'right', 
+                    formatter: (value: number) => `${value}%`,
+                    fill: '#666',
+                    fontSize: 11,
+                    fontWeight: 'bold'
+                  }}
+                >
                   {barData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={getRiskColor(entry.percentual)} />
                   ))}

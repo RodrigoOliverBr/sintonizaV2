@@ -64,8 +64,10 @@ const EmployeesPage: React.FC = () => {
   };
 
   const getDepartmentName = (employee: Employee) => {
+    if (!employee || !employee.companyId) return "N/A";
+    
     const company = companies.find(c => c.id === employee.companyId);
-    if (!company) return "N/A";
+    if (!company || !company.departments) return "N/A";
     
     const department = company.departments.find(d => d.id === employee.departmentId);
     return department ? department.name : "N/A";

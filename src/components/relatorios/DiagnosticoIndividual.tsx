@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { EyeIcon } from "lucide-react";
-import { getEmployeesByCompany, getDepartmentById } from "@/services/storageService";
+import { getEmployeesByCompany, getDepartmentById, getJobRoleById } from "@/services/storageService";
 import { Employee } from "@/types/cadastro";
 
 interface DiagnosticoIndividualProps {
@@ -99,9 +99,9 @@ const DiagnosticoIndividual: React.FC<DiagnosticoIndividualProps> = ({
       case "Crítico":
         return "destructive";
       case "Atenção":
-        return "warning";
+        return "warning";  // Now we can use "warning" since we added it to the Badge variants
       case "Baixo Risco":
-        return "success";
+        return "success";  // Now we can use "success" since we added it to the Badge variants
       default:
         return "secondary";
     }
@@ -162,12 +162,14 @@ const DiagnosticoIndividual: React.FC<DiagnosticoIndividualProps> = ({
               {employees.map((employee) => {
                 // Obter o nome do departamento
                 const department = getDepartmentById(employee.companyId, employee.departmentId);
+                // Obter o cargo
+                const jobRole = getJobRoleById(employee.roleId);
                 
                 return (
                   <TableRow key={employee.id}>
                     <TableCell className="font-medium">{employee.name}</TableCell>
                     <TableCell>{department?.name || "Não definido"}</TableCell>
-                    <TableCell>{employee.role}</TableCell>
+                    <TableCell>{jobRole?.name || "Não definido"}</TableCell>
                     <TableCell>{employee.riskScore}%</TableCell>
                     <TableCell>
                       <Badge variant={getBadgeVariant(employee.riskStatus)}>

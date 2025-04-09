@@ -9,7 +9,7 @@ import MapaRiscoPsicossocial from "@/components/relatorios/MapaRiscoPsicossocial
 import RankingAreasCriticas from "@/components/relatorios/RankingAreasCriticas";
 import DiagnosticoIndividual from "@/components/relatorios/DiagnosticoIndividual";
 import RelatorioPGR from "@/components/relatorios/RelatorioPGR";
-import { getCompanies, getDepartmentsByCompany, getEmployeesByCompany, getFormResults } from "@/services/storageService";
+import { getCompanies, getDepartmentsByCompany } from "@/services/storageService";
 import { Download, FileText, RefreshCcw } from "lucide-react";
 import { Company, Department } from "@/types/cadastro";
 
@@ -36,7 +36,8 @@ export default function RelatoriosPage() {
   };
 
   const handleDepartmentChange = (departmentId: string) => {
-    setSelectedDepartmentId(departmentId);
+    // If "all" is selected, set to empty string to show all departments
+    setSelectedDepartmentId(departmentId === "all" ? "" : departmentId);
     setReportGenerated(false);
   };
 

@@ -1,20 +1,31 @@
 
 import React, { useState, useEffect } from "react";
-import { getJobRoles } from "@/services/storageService";
+import { getJobRoles, getCompanies, getEmployeesByCompany } from "@/services/storageService";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { FormSection as FormSectionType, FormAnswer, FormResult } from "@/types/form";
+import { FormAnswer, FormResult } from "@/types/form";
 import { formData } from "@/data/formData";
 import FormSection from "@/components/FormSection";
 import FormResults from "@/components/FormResults";
 import { Card } from "@/components/ui/card";
-import { JobRole } from "@/types/cadastro";
+import { Company, Employee, JobRole } from "@/types/cadastro";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus } from "lucide-react";
+import NewEmployeeModal from "@/components/modals/NewEmployeeModal";
 
 const FormularioPage: React.FC = () => {
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [isNewEmployeeModalOpen, setIsNewEmployeeModalOpen] = useState(false);
+  
   const [jobRoles, setJobRoles] = useState<JobRole[]>([]);
   const [currentStep, setCurrentStep] = useState(1);
   const [formAnswers, setFormAnswers] = useState<Record<number, FormAnswer>>({});
   const [showResults, setShowResults] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [formResult, setFormResult] = useState<FormResult>({
     answers: {},
     totalYes: 0,
@@ -32,15 +43,59 @@ const FormularioPage: React.FC = () => {
     analyistNotes: ""
   });
 
-  // Load job roles on component mount
+  // Load companies and job roles on component mount
   useEffect(() => {
+    const loadedCompanies = getCompanies();
+    setCompanies(loadedCompanies);
     setJobRoles(getJobRoles());
   }, []);
+
+  // Load employees when selected company changes
+  useEffect(() => {
+    if (selectedCompanyId) {
+      const employeesForCompany = getEmployeesByCompany(selectedCompanyId);
+      setEmployees(employeesForCompany);
+      // Reset selected employee when company changes
+      setSelectedEmployeeId("");
+      setSelectedEmployee(null);
+      setShowForm(false);
+    }
+  }, [selectedCompanyId]);
+
+  // Update selected employee object when ID changes
+  useEffect(() => {
+    if (selectedEmployeeId) {
+      const employee = employees.find(e => e.id === selectedEmployeeId);
+      setSelectedEmployee(employee || null);
+      setShowForm(!!employee);
+      
+      // Reset form state when employee changes
+      setFormAnswers({});
+      setCurrentStep(1);
+      setShowResults(false);
+    }
+  }, [selectedEmployeeId, employees]);
 
   // Calculate results whenever answers change
   useEffect(() => {
     calculateResults();
   }, [formAnswers]);
+
+  const handleCompanyChange = (companyId: string) => {
+    setSelectedCompanyId(companyId);
+  };
+
+  const handleEmployeeChange = (employeeId: string) => {
+    setSelectedEmployeeId(employeeId);
+  };
+
+  const handleEmployeeAdded = () => {
+    // Reload employees for the selected company
+    if (selectedCompanyId) {
+      const employeesForCompany = getEmployeesByCompany(selectedCompanyId);
+      setEmployees(employeesForCompany);
+    }
+  };
 
   const handleAnswerChange = (questionId: number, answer: boolean | null) => {
     setFormAnswers(prev => ({
@@ -176,8 +231,78 @@ const FormularioPage: React.FC = () => {
   return (
     <Layout>
       <div className="container mx-auto p-4 pb-16">
-        {!showResults ? (
+        <h1 className="text-3xl font-bold mb-6">Formulário de Avaliação</h1>
+        <p className="text-lg mb-8">
+          Utilize este formulário para realizar a avaliação de riscos ocupacionais para um funcionário.
+        </p>
+
+        <Card className="p-6 mb-8">
+          <div className="grid gap-6 md:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium mb-2">Selecione a Empresa</label>
+              <Select value={selectedCompanyId} onValueChange={handleCompanyChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha uma empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Selecione o Funcionário</label>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Select 
+                    value={selectedEmployeeId} 
+                    onValueChange={handleEmployeeChange}
+                    disabled={!selectedCompanyId || employees.length === 0}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={!selectedCompanyId 
+                        ? "Selecione uma empresa primeiro" 
+                        : employees.length === 0 
+                          ? "Nenhum funcionário cadastrado" 
+                          : "Escolha um funcionário"} 
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.map((employee) => (
+                        <SelectItem key={employee.id} value={employee.id}>
+                          {employee.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => setIsNewEmployeeModalOpen(true)}
+                  disabled={!selectedCompanyId}
+                  title="Adicionar novo funcionário"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {showForm && !showResults && (
           <>
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+              <h2 className="text-xl font-semibold mb-4">Avaliação para: {selectedEmployee?.name}</h2>
+              <p className="text-gray-600">
+                Função: {getJobRoleById(selectedEmployee?.roleId || "")?.name || "N/A"}
+              </p>
+            </div>
+
             <div className="mb-6">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-muted-foreground">
@@ -194,11 +319,6 @@ const FormularioPage: React.FC = () => {
                 ></div>
               </div>
             </div>
-
-            <h1 className="text-3xl font-bold mb-6">Formulário de Avaliação</h1>
-            <p className="text-lg mb-8">
-              Utilize este formulário para realizar a avaliação de riscos ocupacionais.
-            </p>
 
             {formData.sections[currentStep - 1] && (
               <FormSection
@@ -226,8 +346,17 @@ const FormularioPage: React.FC = () => {
               </Button>
             </div>
           </>
-        ) : (
+        )}
+
+        {showForm && showResults && (
           <>
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+              <h2 className="text-xl font-semibold mb-4">Resultados da Avaliação para: {selectedEmployee?.name}</h2>
+              <p className="text-gray-600">
+                Função: {getJobRoleById(selectedEmployee?.roleId || "")?.name || "N/A"}
+              </p>
+            </div>
+
             <FormResults 
               result={formResult} 
               onNotesChange={handleAnalystNotesChange} 
@@ -239,10 +368,25 @@ const FormularioPage: React.FC = () => {
                 onClick={handleRestart}
                 className="w-full md:w-auto"
               >
-                Iniciar Nova Avaliação
+                Iniciar Nova Avaliação para {selectedEmployee?.name}
               </Button>
             </div>
           </>
+        )}
+
+        {!showForm && (
+          <Card className="p-6 text-center">
+            <p className="text-lg mb-4">Selecione uma empresa e um funcionário para iniciar a avaliação.</p>
+          </Card>
+        )}
+
+        {isNewEmployeeModalOpen && (
+          <NewEmployeeModal
+            open={isNewEmployeeModalOpen}
+            onOpenChange={setIsNewEmployeeModalOpen}
+            onEmployeeAdded={handleEmployeeAdded}
+            preselectedCompanyId={selectedCompanyId}
+          />
         )}
       </div>
     </Layout>

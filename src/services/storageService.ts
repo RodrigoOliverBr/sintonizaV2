@@ -1,9 +1,12 @@
 import { Company, Department, Employee, JobRole } from "@/types/cadastro";
+import { FormResult, StoredFormResult } from "@/types/form";
+import { formData } from "@/data/formData";
 
 // Keys for localStorage
 const COMPANIES_KEY = "istas21:companies";
 const EMPLOYEES_KEY = "istas21:employees";
 const JOB_ROLES_KEY = "istas21:jobRoles";
+const FORM_RESULTS_KEY = "istas21:formResults";
 
 // Initial data
 const initialCompanies: Company[] = [
@@ -218,4 +221,76 @@ export const getDepartmentById = (companyId: string, departmentId: string): Depa
 
 export const getCompanyById = (id: string): Company | undefined => {
   return getCompanies().find(c => c.id === id);
+};
+
+// Form Results
+export const getFormResults = (): StoredFormResult[] => {
+  const results = localStorage.getItem(FORM_RESULTS_KEY);
+  if (!results) {
+    return [];
+  }
+  return JSON.parse(results);
+};
+
+export const getFormResultByEmployeeId = (employeeId: string): StoredFormResult | undefined => {
+  const results = getFormResults();
+  return results.find(r => r.employeeId === employeeId);
+};
+
+export const saveFormResult = (employeeId: string, result: FormResult): StoredFormResult => {
+  const results = getFormResults();
+  
+  // Calculate if the form is complete
+  const allQuestions = formData.sections.flatMap(section => section.questions);
+  const totalQuestions = allQuestions.length;
+  const answeredQuestions = Object.values(result.answers).filter(a => a.answer !== null).length;
+  const isComplete = answeredQuestions === totalQuestions;
+  
+  const newResult: StoredFormResult = {
+    ...result,
+    employeeId,
+    lastUpdated: Date.now(),
+    isComplete
+  };
+  
+  // Update existing or add new
+  const existingIndex = results.findIndex(r => r.employeeId === employeeId);
+  if (existingIndex >= 0) {
+    results[existingIndex] = newResult;
+  } else {
+    results.push(newResult);
+  }
+  
+  localStorage.setItem(FORM_RESULTS_KEY, JSON.stringify(results));
+  return newResult;
+};
+
+export const getFormStatusByEmployeeId = (employeeId: string): 'not-started' | 'in-progress' | 'completed' => {
+  const result = getFormResultByEmployeeId(employeeId);
+  
+  if (!result) {
+    return 'not-started';
+  }
+  
+  if (result.isComplete) {
+    return 'completed';
+  }
+  
+  return 'in-progress';
+};
+
+export const deleteFormResultsByEmployeeId = (employeeId: string): void => {
+  const results = getFormResults();
+  const filteredResults = results.filter(r => r.employeeId !== employeeId);
+  localStorage.setItem(FORM_RESULTS_KEY, JSON.stringify(filteredResults));
+};
+
+// Also update deleteEmployee to remove form results
+export const deleteEmployee = (id: string): void => {
+  const employees = getEmployees();
+  const filteredEmployees = employees.filter(e => e.id !== id);
+  localStorage.setItem(EMPLOYEES_KEY, JSON.stringify(filteredEmployees));
+  
+  // Also delete any form results for this employee
+  deleteFormResultsByEmployeeId(id);
 };

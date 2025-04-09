@@ -1,8 +1,18 @@
 
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Company, Employee, JobRole } from "@/types/cadastro";
-import { getCompanies, getEmployees, getJobRoleById, getDepartmentById, getCompanyById, deleteEmployee } from "@/services/storageService";
+import { 
+  getCompanies, 
+  getEmployees, 
+  getJobRoleById, 
+  getDepartmentById, 
+  getCompanyById, 
+  deleteEmployee,
+  getFormStatusByEmployeeId,
+  getFormResultByEmployeeId
+} from "@/services/storageService";
 import {
   Table,
   TableBody,
@@ -20,13 +30,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Eye, Clock, PenLine, CheckCircle2 } from "lucide-react";
 import NewEmployeeModal from "@/components/modals/NewEmployeeModal";
 import EditEmployeeModal from "@/components/modals/EditEmployeeModal";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { FormStatus } from "@/types/form";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { format } from "date-fns";
 
 const EmployeesPage: React.FC = () => {
+  const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("all");
@@ -113,6 +128,62 @@ const EmployeesPage: React.FC = () => {
     return role ? role.name : "N/A";
   };
 
+  const handleViewFormResponses = (employeeId: string) => {
+    navigate(`/?employeeId=${employeeId}`);
+  };
+
+  const getFormStatusDisplay = (employeeId: string) => {
+    const status = getFormStatusByEmployeeId(employeeId);
+    const formResult = getFormResultByEmployeeId(employeeId);
+    
+    // Status icon and color mapping
+    const statusConfig = {
+      'not-started': {
+        icon: Clock,
+        label: 'Não iniciado',
+        color: 'bg-gray-200 text-gray-700',
+        tooltipText: 'Formulário não iniciado'
+      },
+      'in-progress': {
+        icon: PenLine,
+        label: 'Em andamento',
+        color: 'bg-yellow-100 text-yellow-800',
+        tooltipText: 'Formulário em andamento'
+      },
+      'completed': {
+        icon: CheckCircle2,
+        label: 'Concluído',
+        color: 'bg-green-100 text-green-800',
+        tooltipText: 'Formulário concluído'
+      }
+    };
+
+    const config = statusConfig[status];
+
+    return (
+      <div className="flex flex-col">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Badge variant="outline" className={`${config.color} flex items-center gap-1`}>
+                <config.icon className="h-3 w-3" />
+                <span>{config.label}</span>
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{config.tooltipText}</p>
+              {formResult?.lastUpdated && (
+                <p className="text-xs text-muted-foreground">
+                  Última atualização: {format(new Date(formResult.lastUpdated), 'dd/MM/yyyy HH:mm')}
+                </p>
+              )}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    );
+  };
+
   return (
     <Layout>
       <div className="container mx-auto py-6">
@@ -163,6 +234,7 @@ const EmployeesPage: React.FC = () => {
                 <TableHead>Função</TableHead>
                 <TableHead>Empresa</TableHead>
                 <TableHead>Setor</TableHead>
+                <TableHead>Status do Formulário</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -170,6 +242,8 @@ const EmployeesPage: React.FC = () => {
               {filteredEmployees.length > 0 ? (
                 filteredEmployees.map((employee) => {
                   const company = companies.find(c => c.id === employee.companyId);
+                  const formStatus = getFormStatusByEmployeeId(employee.id);
+                  
                   return (
                     <TableRow key={employee.id}>
                       <TableCell>{employee.name}</TableCell>
@@ -177,8 +251,20 @@ const EmployeesPage: React.FC = () => {
                       <TableCell>{getJobRoleName(employee.roleId)}</TableCell>
                       <TableCell>{company ? company.name : "N/A"}</TableCell>
                       <TableCell>{getDepartmentName(employee)}</TableCell>
+                      <TableCell>{getFormStatusDisplay(employee.id)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
+                          {formStatus === 'completed' && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex items-center gap-1"
+                              onClick={() => handleViewFormResponses(employee.id)}
+                            >
+                              <Eye className="h-4 w-4" />
+                              <span>Ver Respostas</span>
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="icon" 
@@ -203,7 +289,7 @@ const EmployeesPage: React.FC = () => {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     Nenhum funcionário encontrado
                   </TableCell>
                 </TableRow>

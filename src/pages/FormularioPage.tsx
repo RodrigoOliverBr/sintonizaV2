@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
-import { getJobRoles, getCompanies, getEmployeesByCompany } from "@/services/storageService";
+import { useSearchParams } from "react-router-dom";
+import { getJobRoles, getCompanies, getEmployeesByCompany, getEmployees, getFormResultByEmployeeId, saveFormResult } from "@/services/storageService";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { FormAnswer, FormResult } from "@/types/form";
@@ -10,16 +11,22 @@ import FormResults from "@/components/FormResults";
 import { Card } from "@/components/ui/card";
 import { Company, Employee, JobRole } from "@/types/cadastro";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, ArrowLeft } from "lucide-react";
 import NewEmployeeModal from "@/components/modals/NewEmployeeModal";
+import { useToast } from "@/hooks/use-toast";
 
 const FormularioPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const employeeIdFromUrl = searchParams.get('employeeId');
+  
+  const { toast } = useToast();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isNewEmployeeModalOpen, setIsNewEmployeeModalOpen] = useState(false);
+  const [isEditingExistingResponses, setIsEditingExistingResponses] = useState(false);
   
   const [jobRoles, setJobRoles] = useState<JobRole[]>([]);
   const [currentStep, setCurrentStep] = useState(1);
@@ -48,19 +55,59 @@ const FormularioPage: React.FC = () => {
     const loadedCompanies = getCompanies();
     setCompanies(loadedCompanies);
     setJobRoles(getJobRoles());
-  }, []);
+
+    // Load employee from URL param if present
+    if (employeeIdFromUrl) {
+      const allEmployees = getEmployees();
+      const employee = allEmployees.find(e => e.id === employeeIdFromUrl);
+      
+      if (employee) {
+        setSelectedCompanyId(employee.companyId);
+        setSelectedEmployeeId(employeeIdFromUrl);
+        setSelectedEmployee(employee);
+        setIsEditingExistingResponses(true);
+        
+        // Load existing form responses
+        const existingResult = getFormResultByEmployeeId(employeeIdFromUrl);
+        if (existingResult) {
+          setFormAnswers(existingResult.answers);
+          setFormResult({
+            answers: existingResult.answers,
+            totalYes: existingResult.totalYes,
+            totalNo: existingResult.totalNo,
+            severityCounts: existingResult.severityCounts,
+            yesPerSeverity: existingResult.yesPerSeverity,
+            analyistNotes: existingResult.analyistNotes
+          });
+          setShowForm(true);
+          // If form is complete, show results directly
+          if (existingResult.isComplete) {
+            setShowResults(true);
+          }
+        }
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Funcionário não encontrado",
+          description: "O funcionário especificado não foi encontrado."
+        });
+      }
+    }
+  }, [employeeIdFromUrl, toast]);
 
   // Load employees when selected company changes
   useEffect(() => {
     if (selectedCompanyId) {
       const employeesForCompany = getEmployeesByCompany(selectedCompanyId);
       setEmployees(employeesForCompany);
-      // Reset selected employee when company changes
-      setSelectedEmployeeId("");
-      setSelectedEmployee(null);
-      setShowForm(false);
+      // Only reset selected employee when company changes and we're not in edit mode
+      if (!isEditingExistingResponses) {
+        setSelectedEmployeeId("");
+        setSelectedEmployee(null);
+        setShowForm(false);
+      }
     }
-  }, [selectedCompanyId]);
+  }, [selectedCompanyId, isEditingExistingResponses]);
 
   // Update selected employee object when ID changes
   useEffect(() => {
@@ -69,17 +116,32 @@ const FormularioPage: React.FC = () => {
       setSelectedEmployee(employee || null);
       setShowForm(!!employee);
       
-      // Reset form state when employee changes
-      setFormAnswers({});
-      setCurrentStep(1);
-      setShowResults(false);
+      // Only reset form state when employee changes and we're not in edit mode
+      if (!isEditingExistingResponses) {
+        setFormAnswers({});
+        setCurrentStep(1);
+        setShowResults(false);
+      }
+      
+      // When editing existing, only load data if it's the initial load
+      if (isEditingExistingResponses) {
+        setIsEditingExistingResponses(false);
+      }
     }
-  }, [selectedEmployeeId, employees]);
+  }, [selectedEmployeeId, employees, isEditingExistingResponses]);
 
   // Calculate results whenever answers change
   useEffect(() => {
     calculateResults();
-  }, [formAnswers]);
+    
+    // Save form progress as answers change
+    if (selectedEmployeeId && Object.keys(formAnswers).length > 0) {
+      saveFormResult(selectedEmployeeId, {
+        ...formResult,
+        answers: formAnswers
+      });
+    }
+  }, [formAnswers, selectedEmployeeId]);
 
   const handleCompanyChange = (companyId: string) => {
     setSelectedCompanyId(companyId);
@@ -87,6 +149,42 @@ const FormularioPage: React.FC = () => {
 
   const handleEmployeeChange = (employeeId: string) => {
     setSelectedEmployeeId(employeeId);
+    
+    // If employee has existing responses, load them
+    const existingResult = getFormResultByEmployeeId(employeeId);
+    if (existingResult) {
+      setFormAnswers(existingResult.answers);
+      setFormResult({
+        answers: existingResult.answers,
+        totalYes: existingResult.totalYes,
+        totalNo: existingResult.totalNo,
+        severityCounts: existingResult.severityCounts,
+        yesPerSeverity: existingResult.yesPerSeverity,
+        analyistNotes: existingResult.analyistNotes
+      });
+      // If form is complete, don't show results yet, let user navigate through the form
+      setShowResults(false);
+      setCurrentStep(1);
+    } else {
+      // Reset form for new employee
+      setFormAnswers({});
+      setFormResult({
+        answers: {},
+        totalYes: 0,
+        totalNo: 0,
+        severityCounts: {
+          "LEVEMENTE PREJUDICIAL": 0,
+          "PREJUDICIAL": 0,
+          "EXTREMAMENTE PREJUDICIAL": 0,
+        },
+        yesPerSeverity: {
+          "LEVEMENTE PREJUDICIAL": 0,
+          "PREJUDICIAL": 0,
+          "EXTREMAMENTE PREJUDICIAL": 0,
+        },
+        analyistNotes: ""
+      });
+    }
   };
 
   const handleEmployeeAdded = () => {
@@ -135,6 +233,14 @@ const FormularioPage: React.FC = () => {
       ...prev,
       analyistNotes: notes
     }));
+    
+    // Save the notes immediately when they change
+    if (selectedEmployeeId) {
+      saveFormResult(selectedEmployeeId, {
+        ...formResult,
+        analyistNotes: notes
+      });
+    }
   };
 
   const calculateResults = () => {
@@ -209,6 +315,11 @@ const FormularioPage: React.FC = () => {
     window.scrollTo(0, 0);
   };
 
+  const handleBackToEmployeeList = () => {
+    window.history.pushState({}, '', '/cadastros/funcionarios');
+    window.location.reload();
+  };
+
   // Utility function to get job role by id
   const getJobRoleById = (roleId: string) => {
     return jobRoles.find(role => role.id === roleId);
@@ -231,68 +342,83 @@ const FormularioPage: React.FC = () => {
   return (
     <Layout>
       <div className="container mx-auto p-4 pb-16">
-        <h1 className="text-3xl font-bold mb-6">Formulário de Avaliação</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Formulário de Avaliação</h1>
+          {employeeIdFromUrl && (
+            <Button 
+              variant="outline" 
+              onClick={handleBackToEmployeeList}
+              className="flex items-center gap-1"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar para lista de funcionários
+            </Button>
+          )}
+        </div>
+        
         <p className="text-lg mb-8">
           Utilize este formulário para realizar a avaliação de riscos ocupacionais para um funcionário.
         </p>
 
-        <Card className="p-6 mb-8">
-          <div className="grid gap-6 md:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium mb-2">Selecione a Empresa</label>
-              <Select value={selectedCompanyId} onValueChange={handleCompanyChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Escolha uma empresa" />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        {!employeeIdFromUrl && (
+          <Card className="p-6 mb-8">
+            <div className="grid gap-6 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium mb-2">Selecione a Empresa</label>
+                <Select value={selectedCompanyId} onValueChange={handleCompanyChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Escolha uma empresa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companies.map((company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Selecione o Funcionário</label>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Select 
-                    value={selectedEmployeeId} 
-                    onValueChange={handleEmployeeChange}
-                    disabled={!selectedCompanyId || employees.length === 0}
+              <div>
+                <label className="block text-sm font-medium mb-2">Selecione o Funcionário</label>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Select 
+                      value={selectedEmployeeId} 
+                      onValueChange={handleEmployeeChange}
+                      disabled={!selectedCompanyId || employees.length === 0}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={!selectedCompanyId 
+                          ? "Selecione uma empresa primeiro" 
+                          : employees.length === 0 
+                            ? "Nenhum funcionário cadastrado" 
+                            : "Escolha um funcionário"} 
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees.map((employee) => (
+                          <SelectItem key={employee.id} value={employee.id}>
+                            {employee.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={() => setIsNewEmployeeModalOpen(true)}
+                    disabled={!selectedCompanyId}
+                    title="Adicionar novo funcionário"
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder={!selectedCompanyId 
-                        ? "Selecione uma empresa primeiro" 
-                        : employees.length === 0 
-                          ? "Nenhum funcionário cadastrado" 
-                          : "Escolha um funcionário"} 
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {employees.map((employee) => (
-                        <SelectItem key={employee.id} value={employee.id}>
-                          {employee.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={() => setIsNewEmployeeModalOpen(true)}
-                  disabled={!selectedCompanyId}
-                  title="Adicionar novo funcionário"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {showForm && !showResults && (
           <>

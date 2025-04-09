@@ -35,3 +35,11 @@ export type FormResult = {
   yesPerSeverity: Record<SeverityLevel, number>;
   analyistNotes: string;
 };
+
+export type StoredFormResult = FormResult & {
+  employeeId: string;
+  lastUpdated: number; // timestamp
+  isComplete: boolean;
+};
+
+export type FormStatus = 'not-started' | 'in-progress' | 'completed';

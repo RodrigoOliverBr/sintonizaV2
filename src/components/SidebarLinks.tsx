@@ -1,127 +1,81 @@
 
-import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { LucideIcon } from "lucide-react";
-import { Building, Users, ClipboardList, BookOpen, HelpCircle, Info, LifeBuoy } from "lucide-react";
+import React from "react";
+import { NavLink } from "react-router-dom";
+import { Building2, ClipboardList, FileQuestion, FileSearch, FileText, Users, BarChart2 } from "lucide-react";
 
-interface NavItem {
-  title: string;
-  href: string;
-  icon: LucideIcon;
-  subItems?: NavItem[];
-}
-
-interface NavSection {
-  title: string;
-  items: NavItem[];
-}
-
-const navSections: NavSection[] = [
-  {
-    title: "Formulário",
-    items: [
-      {
-        title: "Formulário ISTAS-21",
-        href: "/",
-        icon: ClipboardList,
-      },
-      {
-        title: "Como Preencher",
-        href: "/como-preencher",
-        icon: HelpCircle,
-      },
-      {
-        title: "Como Avaliar",
-        href: "/como-avaliar",
-        icon: BookOpen,
-      },
-      {
-        title: "Mitigações",
-        href: "/mitigacoes",
-        icon: LifeBuoy,
-      },
-    ],
-  },
-  {
-    title: "Cadastros",
-    items: [
-      {
-        title: "Empresas",
-        href: "/cadastros/empresas",
-        icon: Building,
-      },
-      {
-        title: "Funcionários",
-        href: "/cadastros/funcionarios",
-        icon: Users,
-      },
-    ],
-  },
-];
-
-export const SidebarLinks: React.FC = () => {
-  const location = useLocation();
-
-  const renderNavItems = (items: NavItem[]) => {
-    return items.map((item) => {
-      const isActive = location.pathname === item.href;
-      const hasSubItems = item.subItems && item.subItems.length > 0;
-      
-      return (
-        <div key={item.href}>
-          <Link
-            to={item.href}
-            className={cn(
-              "flex items-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-primary hover:text-primary-foreground",
-              isActive
-                ? "bg-primary text-primary-foreground"
-                : "transparent"
-            )}
-          >
-            <item.icon className="mr-2 h-4 w-4" />
-            {item.title}
-          </Link>
-          
-          {hasSubItems && (
-            <div className="pl-6 mt-1 space-y-1">
-              {item.subItems?.map((subItem) => {
-                const isSubActive = location.pathname === subItem.href;
-                return (
-                  <Link
-                    key={subItem.href}
-                    to={subItem.href}
-                    className={cn(
-                      "flex items-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-primary hover:text-primary-foreground",
-                      isSubActive
-                        ? "bg-primary text-primary-foreground"
-                        : "transparent"
-                    )}
-                  >
-                    <subItem.icon className="mr-2 h-4 w-4" />
-                    {subItem.title}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      );
-    });
-  };
+const SidebarLinks: React.FC = () => {
+  const activeClassName = 
+    "flex items-center space-x-3 text-sm font-semibold bg-white rounded-md px-3 py-2 text-esocial-blue";
+  const inactiveClassName = 
+    "flex items-center space-x-3 text-sm font-medium rounded-md px-3 py-2 text-gray-600 hover:bg-white/50 hover:text-esocial-blue transition-colors";
 
   return (
-    <div className="space-y-4 py-4">
-      {navSections.map((section) => (
-        <div key={section.title} className="px-3 py-2">
-          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-            {section.title}
-          </h2>
-          <div className="space-y-1">
-            {renderNavItems(section.items)}
-          </div>
-        </div>
-      ))}
+    <div className="space-y-1">
+      <NavLink 
+        to="/" 
+        className={({ isActive }) => isActive ? activeClassName : inactiveClassName}
+        end
+      >
+        <FileText size={20} />
+        <span>Formulário</span>
+      </NavLink>
+      
+      <NavLink 
+        to="/como-preencher" 
+        className={({ isActive }) => isActive ? activeClassName : inactiveClassName}
+      >
+        <FileQuestion size={20} />
+        <span>Como Preencher</span>
+      </NavLink>
+      
+      <NavLink 
+        to="/como-avaliar" 
+        className={({ isActive }) => isActive ? activeClassName : inactiveClassName}
+      >
+        <FileSearch size={20} />
+        <span>Como Avaliar</span>
+      </NavLink>
+      
+      <NavLink 
+        to="/mitigacoes" 
+        className={({ isActive }) => isActive ? activeClassName : inactiveClassName}
+      >
+        <ClipboardList size={20} />
+        <span>Mitigações</span>
+      </NavLink>
+      
+      <NavLink 
+        to="/relatorios" 
+        className={({ isActive }) => isActive ? activeClassName : inactiveClassName}
+      >
+        <BarChart2 size={20} />
+        <span>Relatórios</span>
+      </NavLink>
+      
+      <div className="py-1">
+        <div className="h-px bg-gray-200 my-2"></div>
+        <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          Cadastros
+        </h3>
+      </div>
+      
+      <NavLink 
+        to="/cadastros/empresas" 
+        className={({ isActive }) => isActive ? activeClassName : inactiveClassName}
+      >
+        <Building2 size={20} />
+        <span>Empresas</span>
+      </NavLink>
+      
+      <NavLink 
+        to="/cadastros/funcionarios" 
+        className={({ isActive }) => isActive ? activeClassName : inactiveClassName}
+      >
+        <Users size={20} />
+        <span>Funcionários</span>
+      </NavLink>
     </div>
   );
 };
+
+export default SidebarLinks;

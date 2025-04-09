@@ -11,7 +11,6 @@ import {
   X,
   Building2,
   Users,
-  Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -62,11 +61,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       title: "Funcionários",
       href: "/cadastros/funcionarios",
       icon: Users,
-    },
-    {
-      title: "Funções",
-      href: "/cadastros/funcoes",
-      icon: Briefcase,
     },
   ];
 

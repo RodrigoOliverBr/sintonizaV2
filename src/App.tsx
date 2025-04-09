@@ -11,7 +11,6 @@ import Sobre from "./pages/Sobre";
 import Mitigacoes from "./pages/Mitigacoes";
 import CompaniesPage from "./pages/CompaniesPage";
 import EmployeesPage from "./pages/EmployeesPage";
-import JobRolesPage from "./pages/JobRolesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,7 +29,6 @@ const App = () => (
           <Route path="/mitigacoes" element={<Mitigacoes />} />
           <Route path="/cadastros/empresas" element={<CompaniesPage />} />
           <Route path="/cadastros/funcionarios" element={<EmployeesPage />} />
-          <Route path="/cadastros/funcoes" element={<JobRolesPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

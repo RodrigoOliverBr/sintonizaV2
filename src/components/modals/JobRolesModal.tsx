@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { 
   getJobRoles, 
+  getJobRolesByCompany,
   addJobRole, 
   updateJobRole,
   deleteJobRole
@@ -35,12 +36,14 @@ interface JobRolesModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onRolesUpdated?: () => void;
+  preselectedCompanyId?: string;
 }
 
 const JobRolesModal: React.FC<JobRolesModalProps> = ({
   open,
   onOpenChange,
-  onRolesUpdated
+  onRolesUpdated,
+  preselectedCompanyId
 }) => {
   const [jobRoles, setJobRoles] = useState<JobRole[]>([]);
   const [newRoleName, setNewRoleName] = useState("");
@@ -52,14 +55,34 @@ const JobRolesModal: React.FC<JobRolesModalProps> = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    loadJobRoles();
-  }, []);
+    if (preselectedCompanyId) {
+      loadJobRolesByCompany(preselectedCompanyId);
+    } else {
+      loadAllJobRoles();
+    }
+  }, [preselectedCompanyId]);
 
-  const loadJobRoles = () => {
+  const loadAllJobRoles = () => {
     const roles = getJobRoles() || [];
     setJobRoles(roles);
     if (onRolesUpdated) {
       onRolesUpdated();
+    }
+  };
+
+  const loadJobRolesByCompany = (companyId: string) => {
+    const roles = getJobRolesByCompany(companyId) || [];
+    setJobRoles(roles);
+    if (onRolesUpdated) {
+      onRolesUpdated();
+    }
+  };
+
+  const loadJobRoles = () => {
+    if (preselectedCompanyId) {
+      loadJobRolesByCompany(preselectedCompanyId);
+    } else {
+      loadAllJobRoles();
     }
   };
 
@@ -73,18 +96,34 @@ const JobRolesModal: React.FC<JobRolesModalProps> = ({
       return;
     }
 
-    // Check if role with same name already exists
-    if (jobRoles.some(role => role.name.toLowerCase() === newRoleName.trim().toLowerCase())) {
+    if (!preselectedCompanyId) {
       toast({
         title: "Erro",
-        description: "Já existe uma função com este nome",
+        description: "É necessário selecionar uma empresa primeiro",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if role with same name already exists in this company
+    if (jobRoles.some(role => 
+      role.name.toLowerCase() === newRoleName.trim().toLowerCase() && 
+      role.companyId === preselectedCompanyId
+    )) {
+      toast({
+        title: "Erro",
+        description: "Já existe uma função com este nome nesta empresa",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      addJobRole({ name: newRoleName.trim() });
+      addJobRole({ 
+        name: newRoleName.trim(),
+        companyId: preselectedCompanyId
+      });
+      
       setNewRoleName("");
       toast({
         title: "Função adicionada",
@@ -124,14 +163,15 @@ const JobRolesModal: React.FC<JobRolesModalProps> = ({
       return;
     }
 
-    // Check if another role with the same name exists
+    // Check if another role with the same name exists in this company
     if (jobRoles.some(role => 
       role.id !== editingRole.id && 
-      role.name.toLowerCase() === editedRoleName.trim().toLowerCase())
-    ) {
+      role.name.toLowerCase() === editedRoleName.trim().toLowerCase() &&
+      role.companyId === editingRole.companyId
+    )) {
       toast({
         title: "Erro",
-        description: "Já existe uma função com este nome",
+        description: "Já existe uma função com este nome nesta empresa",
         variant: "destructive",
       });
       return;
@@ -139,7 +179,8 @@ const JobRolesModal: React.FC<JobRolesModalProps> = ({
 
     updateJobRole({
       id: editingRole.id,
-      name: editedRoleName.trim()
+      name: editedRoleName.trim(),
+      companyId: editingRole.companyId
     });
     
     toast({
@@ -188,12 +229,19 @@ const JobRolesModal: React.FC<JobRolesModalProps> = ({
               value={newRoleName}
               onChange={(e) => setNewRoleName(e.target.value)}
               className="flex-1"
+              disabled={!preselectedCompanyId}
             />
-            <Button onClick={handleAddRole}>
+            <Button onClick={handleAddRole} disabled={!preselectedCompanyId}>
               <Plus className="h-4 w-4 mr-2" />
               Adicionar
             </Button>
           </div>
+          
+          {!preselectedCompanyId && (
+            <div className="text-center py-2 text-sm text-yellow-600 mb-4">
+              Selecione uma empresa para gerenciar funções
+            </div>
+          )}
           
           <div className="max-h-[400px] overflow-y-auto">
             <Table>
@@ -249,7 +297,9 @@ const JobRolesModal: React.FC<JobRolesModalProps> = ({
                 ) : (
                   <TableRow>
                     <TableCell colSpan={2} className="text-center py-4">
-                      Nenhuma função cadastrada
+                      {preselectedCompanyId 
+                        ? "Nenhuma função cadastrada para esta empresa" 
+                        : "Selecione uma empresa para ver as funções"}
                     </TableCell>
                   </TableRow>
                 )}

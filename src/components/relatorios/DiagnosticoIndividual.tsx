@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { EyeIcon, RefreshCcw } from "lucide-react";
+import { EyeIcon } from "lucide-react";
 import { getEmployeesByCompany, getDepartmentById } from "@/services/storageService";
 import { Employee } from "@/types/cadastro";
 
@@ -136,7 +136,7 @@ const DiagnosticoIndividual: React.FC<DiagnosticoIndividualProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-700">{counters.lowRisk}</div>
-            <p className="text-sm text-green-600">Score < 50%</p>
+            <p className="text-sm text-green-600">Score &lt; 50%</p>
           </CardContent>
         </Card>
       </div>
@@ -161,7 +161,7 @@ const DiagnosticoIndividual: React.FC<DiagnosticoIndividualProps> = ({
             <TableBody>
               {employees.map((employee) => {
                 // Obter o nome do departamento
-                const department = getDepartmentById(employee.departmentId);
+                const department = getDepartmentById(employee.companyId, employee.departmentId);
                 
                 return (
                   <TableRow key={employee.id}>

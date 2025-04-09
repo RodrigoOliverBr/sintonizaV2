@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { getCompanies, getJobRoles, updateEmployee } from "@/services/storageService";
 import { Company, Department, Employee, JobRole } from "@/types/cadastro";
 import { z } from "zod";
+import { Plus } from "lucide-react";
+import JobRolesModal from "./JobRolesModal";
 
 interface EditEmployeeModalProps {
   open: boolean;
@@ -46,6 +48,7 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
   const [departments, setDepartments] = useState<Department[]>([]);
   const [jobRoles, setJobRoles] = useState<JobRole[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isJobRolesModalOpen, setIsJobRolesModalOpen] = useState(false);
   
   const { toast } = useToast();
 
@@ -54,11 +57,15 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
     const loadedCompanies = getCompanies() || [];
     setCompanies(loadedCompanies);
     
-    const loadedJobRoles = getJobRoles() || [];
-    setJobRoles(loadedJobRoles);
+    loadJobRoles();
     
     loadDepartments(companyId);
   }, [companyId]);
+
+  const loadJobRoles = () => {
+    const loadedJobRoles = getJobRoles() || [];
+    setJobRoles(loadedJobRoles);
+  };
 
   const loadDepartments = (companyId: string) => {
     if (!companyId) {
@@ -137,95 +144,118 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Editar Funcionário</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Nome</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nome completo"
-            />
-            {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="cpf">CPF</Label>
-            <Input
-              id="cpf"
-              value={cpf}
-              onChange={(e) => setCpf(e.target.value)}
-              placeholder="000.000.000-00"
-            />
-            {errors.cpf && <p className="text-sm text-destructive">{errors.cpf}</p>}
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="company">Empresa</Label>
-            <Select value={companyId} onValueChange={handleCompanyChange}>
-              <SelectTrigger id="company">
-                <SelectValue placeholder="Selecione uma empresa" />
-              </SelectTrigger>
-              <SelectContent>
-                {companies.map((company) => (
-                  <SelectItem key={company.id} value={company.id}>
-                    {company.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.companyId && <p className="text-sm text-destructive">{errors.companyId}</p>}
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="department">Departamento</Label>
-            <Select 
-              value={departmentId} 
-              onValueChange={setDepartmentId}
-              disabled={!companyId || departments.length === 0}
-            >
-              <SelectTrigger id="department">
-                <SelectValue placeholder="Selecione um departamento" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments.map((department) => (
-                  <SelectItem key={department.id} value={department.id}>
-                    {department.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.departmentId && <p className="text-sm text-destructive">{errors.departmentId}</p>}
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="role">Função</Label>
-            <Select value={roleId} onValueChange={setRoleId}>
-              <SelectTrigger id="role">
-                <SelectValue placeholder="Selecione uma função" />
-              </SelectTrigger>
-              <SelectContent>
-                {jobRoles.map((role) => (
-                  <SelectItem key={role.id} value={role.id}>
-                    {role.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.roleId && <p className="text-sm text-destructive">{errors.roleId}</p>}
-          </div>
-          
-          <DialogFooter className="pt-4">
-            <Button type="submit">Salvar alterações</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Editar Funcionário</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Nome</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Nome completo"
+              />
+              {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="cpf">CPF</Label>
+              <Input
+                id="cpf"
+                value={cpf}
+                onChange={(e) => setCpf(e.target.value)}
+                placeholder="000.000.000-00"
+              />
+              {errors.cpf && <p className="text-sm text-destructive">{errors.cpf}</p>}
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="company">Empresa</Label>
+              <Select value={companyId} onValueChange={handleCompanyChange}>
+                <SelectTrigger id="company">
+                  <SelectValue placeholder="Selecione uma empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.companyId && <p className="text-sm text-destructive">{errors.companyId}</p>}
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="department">Departamento</Label>
+              <Select 
+                value={departmentId} 
+                onValueChange={setDepartmentId}
+                disabled={!companyId || departments.length === 0}
+              >
+                <SelectTrigger id="department">
+                  <SelectValue placeholder="Selecione um departamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((department) => (
+                    <SelectItem key={department.id} value={department.id}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.departmentId && <p className="text-sm text-destructive">{errors.departmentId}</p>}
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="role">Função</Label>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Select value={roleId} onValueChange={setRoleId}>
+                    <SelectTrigger id="role">
+                      <SelectValue placeholder="Selecione uma função" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {jobRoles.map((role) => (
+                        <SelectItem key={role.id} value={role.id}>
+                          {role.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => setIsJobRolesModalOpen(true)}
+                  title="Gerenciar funções"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {errors.roleId && <p className="text-sm text-destructive">{errors.roleId}</p>}
+            </div>
+            
+            <DialogFooter className="pt-4">
+              <Button type="submit">Salvar alterações</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {isJobRolesModalOpen && (
+        <JobRolesModal 
+          open={isJobRolesModalOpen} 
+          onOpenChange={setIsJobRolesModalOpen}
+          onRolesUpdated={loadJobRoles}
+        />
+      )}
+    </>
   );
 };
 

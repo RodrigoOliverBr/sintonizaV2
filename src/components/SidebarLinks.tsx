@@ -3,7 +3,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
-import { Building, Users, Briefcase, ClipboardList } from "lucide-react";
+import { Building, Users, ClipboardList } from "lucide-react";
 
 interface NavItem {
   title: string;
@@ -59,11 +59,6 @@ const navSections: NavSection[] = [
         title: "Funcionários",
         href: "/cadastros/funcionarios",
         icon: Users,
-      },
-      {
-        title: "Funções",
-        href: "/cadastros/funcoes",
-        icon: Briefcase,
       },
     ],
   },

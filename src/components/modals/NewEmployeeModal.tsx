@@ -24,7 +24,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
-import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, FolderX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { 
   addEmployee, 
@@ -167,6 +167,10 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
     return null;
   }
 
+  // Check if departments or roles are empty
+  const hasDepartments = departments.length > 0;
+  const hasRoles = jobRoles.length > 0;
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -231,23 +235,30 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
                   <Select 
                     value={departmentId} 
                     onValueChange={setDepartmentId}
-                    disabled={!companyId || departments.length === 0}
+                    disabled={!companyId}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder={
                         !companyId 
                           ? "Selecione uma empresa primeiro" 
-                          : departments.length === 0
-                          ? "Nenhum setor disponível"
-                          : "Selecione um setor"
+                          : hasDepartments
+                            ? "Selecione um setor"
+                            : "Nenhum setor cadastrado ainda"
                       } />
                     </SelectTrigger>
                     <SelectContent>
-                      {departments.map((department) => (
-                        <SelectItem key={department.id} value={department.id}>
-                          {department.name}
-                        </SelectItem>
-                      ))}
+                      {hasDepartments ? (
+                        departments.map((department) => (
+                          <SelectItem key={department.id} value={department.id}>
+                            {department.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+                          <FolderX className="mr-2 h-4 w-4" />
+                          Nenhum setor cadastrado ainda 😟
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -266,37 +277,44 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
                           aria-expanded={openRoleCombobox}
                           className="w-full justify-between"
                         >
-                          {roleId
+                          {roleId && hasRoles
                             ? jobRoles.find((role) => role.id === roleId)?.name
                             : "Selecione uma função..."}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[400px] p-0">
-                        <Command>
-                          <CommandInput placeholder="Buscar função..." />
-                          <CommandEmpty>Nenhuma função encontrada.</CommandEmpty>
-                          <CommandGroup className="max-h-60 overflow-y-auto">
-                            {jobRoles.map((role) => (
-                              <CommandItem
-                                key={role.id}
-                                value={role.name}
-                                onSelect={() => {
-                                  setRoleId(role.id === roleId ? "" : role.id);
-                                  setOpenRoleCombobox(false);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    roleId === role.id ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                {role.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </Command>
+                        {hasRoles ? (
+                          <Command>
+                            <CommandInput placeholder="Buscar função..." />
+                            <CommandEmpty>Nenhuma função encontrada.</CommandEmpty>
+                            <CommandGroup className="max-h-60 overflow-y-auto">
+                              {jobRoles.map((role) => (
+                                <CommandItem
+                                  key={role.id}
+                                  value={role.name}
+                                  onSelect={() => {
+                                    setRoleId(role.id === roleId ? "" : role.id);
+                                    setOpenRoleCombobox(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      roleId === role.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {role.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </Command>
+                        ) : (
+                          <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+                            <FolderX className="mr-2 h-4 w-4" />
+                            Nenhuma função cadastrada ainda 😟
+                          </div>
+                        )}
                       </PopoverContent>
                     </Popover>
                   </div>

@@ -9,11 +9,19 @@ import {
   Radar, 
   ResponsiveContainer,
   Tooltip,
-  Legend
+  Legend,
+  BarChart as RechartBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Cell,
+  ReferenceLine
 } from "recharts";
 import { BarChart } from "@/components/ui/BarChart";
 import { getFormResults, getEmployeesByCompany, getDepartmentsByCompany } from "@/services/storageService";
 import { formData } from "@/data/formData";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 
 // Dados simulados para os gráficos
 const dimensoes = [
@@ -25,6 +33,45 @@ const dimensoes = [
   "Dupla Presença", 
   "Assédio Moral e Sexual"
 ];
+
+// Dados simulados de perguntas para cada dimensão
+const perguntasPorDimensao = {
+  "Demandas Psicológicas": [
+    "Há sobrecarga de trabalho?",
+    "O ritmo de trabalho é adequado?",
+    "As metas são atingíveis?"
+  ],
+  "Organização e Gestão do Trabalho": [
+    "Os processos são claros?",
+    "As decisões são comunicadas adequadamente?",
+    "Há participação nas decisões?"
+  ],
+  "Trabalho Ativo e Competências": [
+    "Há autonomia no trabalho?",
+    "As habilidades são bem aproveitadas?",
+    "Há oportunidades de desenvolvimento?"
+  ],
+  "Apoio Social e Liderança": [
+    "Recebe apoio dos colegas?",
+    "A liderança é acessível?",
+    "Há feedback construtivo?"
+  ],
+  "Compensação e Reconhecimento": [
+    "A remuneração é adequada?",
+    "Há reconhecimento pelo trabalho?",
+    "Existem benefícios satisfatórios?"
+  ],
+  "Dupla Presença": [
+    "Consegue conciliar trabalho e vida pessoal?",
+    "Há flexibilidade para questões familiares?",
+    "O trabalho interfere na vida pessoal?"
+  ],
+  "Assédio Moral e Sexual": [
+    "Há respeito entre colegas?",
+    "Existem políticas contra assédio?",
+    "Sente-se seguro no ambiente de trabalho?"
+  ]
+};
 
 const simulatedData = [
   { dimensao: "Demandas Psicológicas", percentual: 72 },
@@ -104,14 +151,34 @@ export default function MapaRiscoPsicossocial({
         </CardHeader>
         <CardContent>
           <div className="h-80">
-            <BarChart
-              data={barData}
-              index="dimensao"
-              categories={["percentual"]}
-              colors={barColors}
-              valueFormatter={(value) => `${value}%`}
-              className="h-full"
-            />
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartBarChart
+                data={barData}
+                layout="vertical"
+                margin={{ top: 20, right: 30, left: 150, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                <XAxis 
+                  type="number" 
+                  domain={[0, 100]} 
+                  ticks={[0, 20, 30, 50, 70, 90, 100]} 
+                />
+                <YAxis 
+                  dataKey="dimensao" 
+                  type="category" 
+                  width={140}
+                  tick={{ fontSize: 12 }}
+                />
+                <Tooltip formatter={(value) => [`${value}%`, "Respostas Positivas"]} />
+                <ReferenceLine x={20} stroke="#4ade80" strokeWidth={2} strokeDasharray="3 3" label={{ value: "20%", position: "top" }} />
+                <ReferenceLine x={30} stroke="#f87171" strokeWidth={2} strokeDasharray="3 3" label={{ value: "30%", position: "top" }} />
+                <Bar dataKey="percentual" radius={[0, 4, 4, 0]}>
+                  {barData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={getRiskColor(entry.percentual)} />
+                  ))}
+                </Bar>
+              </RechartBarChart>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
@@ -122,40 +189,53 @@ export default function MapaRiscoPsicossocial({
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Dimensão / Setor
-                  </th>
+            <Table className="w-full">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[250px]">Dimensão / Pergunta</TableHead>
                   {getDepartmentsByCompany(companyId).map(dept => (
-                    <th key={dept.id} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <TableHead key={dept.id} className="text-center">
                       {dept.name}
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {dimensoes.map((dimensao, idx) => (
-                  <tr key={dimensao}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {dimensao}
-                    </td>
-                    {getDepartmentsByCompany(companyId).map(dept => {
-                      const randomValue = Math.floor(Math.random() * 100);
-                      return (
-                        <td key={dept.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 rounded-full mr-2" style={{ backgroundColor: getRiskColor(randomValue) }}></div>
-                            <span>{randomValue}%</span>
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {dimensoes.map((dimensao, dimIdx) => {
+                  const perguntas = perguntasPorDimensao[dimensao as keyof typeof perguntasPorDimensao] || [];
+                  return (
+                    <React.Fragment key={dimensao}>
+                      <TableRow className="bg-muted/30 font-medium">
+                        <TableCell colSpan={getDepartmentsByCompany(companyId).length + 1}>
+                          {dimensao}
+                        </TableCell>
+                      </TableRow>
+                      {perguntas.map((pergunta, qIdx) => (
+                        <TableRow key={`${dimensao}-${qIdx}`}>
+                          <TableCell className="pl-8 text-sm">
+                            {pergunta}
+                          </TableCell>
+                          {getDepartmentsByCompany(companyId).map(dept => {
+                            const randomValue = Math.floor(Math.random() * 100);
+                            return (
+                              <TableCell key={dept.id} className="text-center">
+                                <div className="flex items-center justify-center">
+                                  <div 
+                                    className="w-8 h-8 rounded-full mr-2" 
+                                    style={{ backgroundColor: getRiskColor(randomValue) }}
+                                  />
+                                  <span>{randomValue}%</span>
+                                </div>
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))}
+                    </React.Fragment>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>

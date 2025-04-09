@@ -80,7 +80,12 @@ export const addDepartmentToCompany = (companyId: string, departmentName: string
   const company = companies.find(c => c.id === companyId);
   
   if (!company) {
-    throw new Error("Company not found");
+    throw new Error("Empresa não encontrada");
+  }
+  
+  // Garantir que a propriedade departments existe
+  if (!company.departments) {
+    company.departments = [];
   }
   
   const newDepartment: Department = {
@@ -97,14 +102,14 @@ export const addDepartmentToCompany = (companyId: string, departmentName: string
 
 export const getDepartmentsByCompany = (companyId: string): Department[] => {
   const company = getCompanyById(companyId);
-  return company ? company.departments : [];
+  return company && company.departments ? company.departments : [];
 };
 
 export const deleteDepartment = (companyId: string, departmentId: string): void => {
   const companies = getCompanies();
   const company = companies.find(c => c.id === companyId);
   
-  if (!company) return;
+  if (!company || !company.departments) return;
   
   company.departments = company.departments.filter(d => d.id !== departmentId);
   updateCompany(company);
@@ -201,7 +206,7 @@ export const deleteEmployee = (id: string): void => {
 
 export const getDepartmentById = (companyId: string, departmentId: string): Department | undefined => {
   const company = getCompanyById(companyId);
-  return company?.departments.find(d => d.id === departmentId);
+  return company?.departments?.find(d => d.id === departmentId);
 };
 
 export const getCompanyById = (id: string): Company | undefined => {

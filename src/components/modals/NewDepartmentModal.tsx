@@ -54,6 +54,7 @@ const NewDepartmentModal: React.FC<NewDepartmentModalProps> = ({
       onOpenChange(false);
       if (onDepartmentAdded) onDepartmentAdded();
     } catch (error) {
+      console.error("Erro ao adicionar setor:", error);
       toast({
         title: "Erro",
         description: error instanceof Error ? error.message : "Erro ao adicionar setor",

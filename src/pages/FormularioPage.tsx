@@ -97,7 +97,7 @@ const FormularioPage: React.FC = () => {
 
   useEffect(() => {
     // Filter employees by company
-    if (selectedCompanyId) {
+    if (selectedCompanyId && selectedCompanyId !== "all") {
       const employeesForCompany = getEmployeesByCompany(selectedCompanyId);
       setFilteredEmployees(employeesForCompany);
     } else {
@@ -109,7 +109,7 @@ const FormularioPage: React.FC = () => {
     // Filter employees by search term
     if (employeeSearch) {
       const searchLower = employeeSearch.toLowerCase();
-      const filtered = selectedCompanyId 
+      const filtered = selectedCompanyId && selectedCompanyId !== "all"
         ? getEmployeesByCompany(selectedCompanyId).filter(e => 
             e.name.toLowerCase().includes(searchLower) || 
             e.cpf.toLowerCase().includes(searchLower))
@@ -118,7 +118,7 @@ const FormularioPage: React.FC = () => {
             e.cpf.toLowerCase().includes(searchLower));
       
       setFilteredEmployees(filtered);
-    } else if (selectedCompanyId) {
+    } else if (selectedCompanyId && selectedCompanyId !== "all") {
       setFilteredEmployees(getEmployeesByCompany(selectedCompanyId));
     } else {
       setFilteredEmployees(employees);

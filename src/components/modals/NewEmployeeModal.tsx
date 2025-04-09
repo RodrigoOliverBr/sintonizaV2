@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -319,7 +320,7 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
                                   <CommandItem
                                     key={role.id}
                                     value={role.name}
-                                    onSelect={(value) => handleRoleSelect(value)}
+                                    onSelect={handleRoleSelect}
                                   >
                                     <Check
                                       className={cn(

@@ -1,31 +1,40 @@
 
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Company, Department } from "@/types/cadastro";
-import { Calendar as CalendarIcon, FileBarChart } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
 import { ptBR } from "date-fns/locale";
+import { Company, Department } from "@/types/cadastro";
 
 interface FilterSectionProps {
   companies: Company[];
   departments: Department[];
   selectedCompanyId: string;
   selectedDepartmentId: string;
-  dateRange: { from?: Date; to?: Date };
+  dateRange: {from?: Date; to?: Date};
   onCompanyChange: (companyId: string) => void;
   onDepartmentChange: (departmentId: string) => void;
-  onDateRangeChange: (range: { from?: Date; to?: Date }) => void;
+  onDateRangeChange: (range: {from?: Date; to?: Date}) => void;
   onGenerateReport: () => void;
   isGenerating: boolean;
 }
 
-export default function FilterSection({
+const FilterSection: React.FC<FilterSectionProps> = ({
   companies,
   departments,
   selectedCompanyId,
@@ -35,25 +44,23 @@ export default function FilterSection({
   onDepartmentChange,
   onDateRangeChange,
   onGenerateReport,
-  isGenerating
-}: FilterSectionProps) {
+  isGenerating,
+}) => {
   return (
     <Card>
-      <CardContent className="pt-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div>
-            <Label htmlFor="company" className="mb-2 block">
-              Empresa <span className="text-red-500">*</span>
-            </Label>
-            <Select 
-              value={selectedCompanyId} 
+      <CardContent className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Empresa</label>
+            <Select
+              value={selectedCompanyId}
               onValueChange={onCompanyChange}
             >
-              <SelectTrigger id="company">
-                <SelectValue placeholder="Selecione uma empresa" />
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>
               <SelectContent>
-                {companies.map(company => (
+                {companies.map((company) => (
                   <SelectItem key={company.id} value={company.id}>
                     {company.name}
                   </SelectItem>
@@ -61,22 +68,20 @@ export default function FilterSection({
               </SelectContent>
             </Select>
           </div>
-          
-          <div>
-            <Label htmlFor="department" className="mb-2 block">
-              Setor/Departamento (opcional)
-            </Label>
-            <Select 
-              value={selectedDepartmentId} 
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Departamento</label>
+            <Select
+              value={selectedDepartmentId}
               onValueChange={onDepartmentChange}
               disabled={!selectedCompanyId || departments.length === 0}
             >
-              <SelectTrigger id="department">
-                <SelectValue placeholder={departments.length === 0 ? "Nenhum setor disponível" : "Todos os setores"} />
+              <SelectTrigger>
+                <SelectValue placeholder="Todos os departamentos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os setores</SelectItem>
-                {departments.map(department => (
+                <SelectItem value="">Todos os departamentos</SelectItem>
+                {departments.map((department) => (
                   <SelectItem key={department.id} value={department.id}>
                     {department.name}
                   </SelectItem>
@@ -84,11 +89,9 @@ export default function FilterSection({
               </SelectContent>
             </Select>
           </div>
-          
-          <div>
-            <Label className="mb-2 block">
-              Período (opcional)
-            </Label>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Período</label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -102,13 +105,14 @@ export default function FilterSection({
                   {dateRange.from ? (
                     dateRange.to ? (
                       <>
-                        {format(dateRange.from, "dd/MM/yy")} - {format(dateRange.to, "dd/MM/yy")}
+                        {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} -{" "}
+                        {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
                       </>
                     ) : (
-                      format(dateRange.from, "dd/MM/yy")
+                      format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
                     )
                   ) : (
-                    "Selecione um período"
+                    <span>Selecione o período</span>
                   )}
                 </Button>
               </PopoverTrigger>
@@ -117,31 +121,27 @@ export default function FilterSection({
                   initialFocus
                   mode="range"
                   defaultMonth={dateRange.from}
-                  selected={dateRange}
-                  onSelect={onDateRangeChange}
-                  numberOfMonths={2}
+                  selected={dateRange as any}
+                  onSelect={(range) => onDateRangeChange(range || {})}
                   locale={ptBR}
                 />
               </PopoverContent>
             </Popover>
           </div>
-          
+
           <div className="flex items-end">
             <Button 
-              className="w-full"
-              onClick={onGenerateReport}
+              className="w-full" 
+              onClick={onGenerateReport} 
               disabled={isGenerating || !selectedCompanyId}
             >
               {isGenerating ? (
                 <>
-                  <span className="loader mr-2"></span>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Gerando...
                 </>
               ) : (
-                <>
-                  <FileBarChart className="mr-2 h-4 w-4" />
-                  Gerar Relatório
-                </>
+                "Gerar Relatório"
               )}
             </Button>
           </div>
@@ -149,4 +149,6 @@ export default function FilterSection({
       </CardContent>
     </Card>
   );
-}
+};
+
+export default FilterSection;

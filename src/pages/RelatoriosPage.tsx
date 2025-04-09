@@ -9,40 +9,18 @@ import MapaRiscoPsicossocial from "@/components/relatorios/MapaRiscoPsicossocial
 import RankingAreasCriticas from "@/components/relatorios/RankingAreasCriticas";
 import DiagnosticoIndividual from "@/components/relatorios/DiagnosticoIndividual";
 import RelatorioPGR from "@/components/relatorios/RelatorioPGR";
-import { getCompanies, getDepartmentsByCompany } from "@/services/storageService";
+import { getCompanies } from "@/services/storageService";
 import { Download, FileText, RefreshCcw } from "lucide-react";
-import { Company, Department } from "@/types/cadastro";
 
 export default function RelatoriosPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
-  const [dateRange, setDateRange] = useState<{from?: Date; to?: Date}>({});
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [reportGenerated, setReportGenerated] = useState(false);
 
   const companies = getCompanies();
-  const [departments, setDepartments] = useState<Department[]>([]);
   
   const handleCompanyChange = (companyId: string) => {
     setSelectedCompanyId(companyId);
-    setSelectedDepartmentId("");
-    if (companyId) {
-      const depts = getDepartmentsByCompany(companyId);
-      setDepartments(depts);
-    } else {
-      setDepartments([]);
-    }
-    setReportGenerated(false);
-  };
-
-  const handleDepartmentChange = (departmentId: string) => {
-    // If "all" is selected, set to empty string to show all departments
-    setSelectedDepartmentId(departmentId === "all" ? "" : departmentId);
-    setReportGenerated(false);
-  };
-
-  const handleDateRangeChange = (range: {from?: Date; to?: Date}) => {
-    setDateRange(range);
     setReportGenerated(false);
   };
 
@@ -70,13 +48,8 @@ export default function RelatoriosPage() {
         
         <FilterSection 
           companies={companies}
-          departments={departments}
           selectedCompanyId={selectedCompanyId}
-          selectedDepartmentId={selectedDepartmentId}
-          dateRange={dateRange}
           onCompanyChange={handleCompanyChange}
-          onDepartmentChange={handleDepartmentChange}
-          onDateRangeChange={handleDateRangeChange}
           onGenerateReport={generateReport}
           isGenerating={isGeneratingReport}
         />
@@ -108,32 +81,32 @@ export default function RelatoriosPage() {
               <TabsContent value="mapa-risco">
                 <MapaRiscoPsicossocial 
                   companyId={selectedCompanyId}
-                  departmentId={selectedDepartmentId}
-                  dateRange={dateRange}
+                  departmentId=""
+                  dateRange={{}}
                 />
               </TabsContent>
               
               <TabsContent value="ranking">
                 <RankingAreasCriticas
                   companyId={selectedCompanyId}
-                  departmentId={selectedDepartmentId}
-                  dateRange={dateRange}
+                  departmentId=""
+                  dateRange={{}}
                 />
               </TabsContent>
               
               <TabsContent value="diagnostico">
                 <DiagnosticoIndividual
                   companyId={selectedCompanyId}
-                  departmentId={selectedDepartmentId}
-                  dateRange={dateRange}
+                  departmentId=""
+                  dateRange={{}}
                 />
               </TabsContent>
               
               <TabsContent value="pgr">
                 <RelatorioPGR
                   companyId={selectedCompanyId}
-                  departmentId={selectedDepartmentId}
-                  dateRange={dateRange}
+                  departmentId=""
+                  dateRange={{}}
                 />
               </TabsContent>
             </Tabs>
@@ -144,7 +117,7 @@ export default function RelatoriosPage() {
           <div className="mt-10 text-center py-16 border-2 border-dashed border-gray-200 rounded-lg">
             <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-600 mb-2">Nenhum relatório gerado</h3>
-            <p className="text-gray-500 mb-4">Configure os filtros acima e clique em "Gerar Relatório"</p>
+            <p className="text-gray-500 mb-4">Configure a empresa acima e clique em "Gerar Relatório"</p>
             <Button 
               onClick={generateReport} 
               disabled={isGeneratingReport || !selectedCompanyId}

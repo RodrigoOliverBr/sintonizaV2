@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import {
   ClipboardList,
   HelpCircle,
-  Info,
   LifeBuoy,
   BookOpen,
   Menu,
@@ -167,7 +166,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                     key={route.href}
                     to={route.href}
                     className={cn(
-                      "group flex items-center px-4 py-3 text-sm font-medium rounded-md",
+                      "group flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer",
                       isActive
                         ? "bg-esocial-blue text-white"
                         : "text-esocial-darkGray hover:bg-esocial-lightGray"
@@ -195,7 +194,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                       key={route.href}
                       to={route.href}
                       className={cn(
-                        "group flex items-center px-4 py-3 text-sm font-medium rounded-md",
+                        "group flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer",
                         isActive
                           ? "bg-esocial-blue text-white"
                           : "text-esocial-darkGray hover:bg-esocial-lightGray"

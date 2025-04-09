@@ -30,12 +30,13 @@ const initialCompanies: Company[] = [
   }
 ];
 
+// Updated to include companyId
 const initialJobRoles: JobRole[] = [
-  { id: "1", name: "Analista de Recursos Humanos" },
-  { id: "2", name: "Engenheiro de Software" },
-  { id: "3", name: "Técnico de Segurança" },
-  { id: "4", name: "Analista Administrativo" },
-  { id: "5", name: "Gerente de Projetos" }
+  { id: "1", name: "Analista de Recursos Humanos", companyId: "1" },
+  { id: "2", name: "Engenheiro de Software", companyId: "1" },
+  { id: "3", name: "Técnico de Segurança", companyId: "2" },
+  { id: "4", name: "Analista Administrativo", companyId: "2" },
+  { id: "5", name: "Gerente de Projetos", companyId: "1" }
 ];
 
 // Companies
@@ -138,22 +139,29 @@ export const getJobRoles = (): JobRole[] => {
   return JSON.parse(jobRoles);
 };
 
+export const getJobRolesByCompany = (companyId: string): JobRole[] => {
+  const jobRoles = getJobRoles();
+  return jobRoles.filter(role => role.companyId === companyId);
+};
+
 export const addJobRole = (jobRole: Omit<JobRole, "id">): JobRole => {
   const jobRoles = getJobRoles();
   
-  // Check for similar names to avoid duplicates
+  // Check for similar names within the same company to avoid duplicates
   const normalizedName = jobRole.name.toLowerCase().trim();
   const similarExists = jobRoles.some(role => 
-    role.name.toLowerCase().trim() === normalizedName
+    role.name.toLowerCase().trim() === normalizedName && 
+    role.companyId === jobRole.companyId
   );
   
   if (similarExists) {
-    throw new Error("Uma função com nome similar já existe");
+    throw new Error("Uma função com nome similar já existe nesta empresa");
   }
   
   const newRole: JobRole = {
     id: Date.now().toString(),
-    name: jobRole.name
+    name: jobRole.name,
+    companyId: jobRole.companyId
   };
   
   localStorage.setItem(JOB_ROLES_KEY, JSON.stringify([...jobRoles, newRole]));

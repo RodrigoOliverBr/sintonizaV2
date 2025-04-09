@@ -37,7 +37,7 @@ import {
   addEmployee, 
   getCompanies, 
   getDepartmentsByCompany,
-  getJobRoles
+  getJobRolesByCompany
 } from "@/services/storageService";
 import { Company, Department, JobRole } from "@/types/cadastro";
 import { useToast } from "@/hooks/use-toast";
@@ -75,22 +75,28 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
     const loadedCompanies = getCompanies() || [];
     setCompanies(loadedCompanies);
     
-    loadJobRoles();
-    
     if (preselectedCompanyId) {
       setCompanyId(preselectedCompanyId);
       loadDepartments(preselectedCompanyId);
+      loadJobRoles(preselectedCompanyId);
     }
   }, [preselectedCompanyId]);
 
-  const loadJobRoles = () => {
-    const loadedJobRoles = getJobRoles() || [];
+  const loadJobRoles = (companyId: string) => {
+    if (!companyId) {
+      setJobRoles([]);
+      setRoleId("");
+      return;
+    }
+    const loadedJobRoles = getJobRolesByCompany(companyId) || [];
     setJobRoles(loadedJobRoles);
+    setRoleId("");
   };
 
   const loadDepartments = (companyId: string) => {
     if (!companyId) {
       setDepartments([]);
+      setDepartmentId("");
       return;
     }
     
@@ -106,6 +112,7 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
   const handleCompanyChange = (value: string) => {
     setCompanyId(value);
     loadDepartments(value);
+    loadJobRoles(value);
   };
 
   const formatCPF = (value: string) => {
@@ -167,6 +174,21 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
     resetForm();
     onOpenChange(false);
     if (onEmployeeAdded) onEmployeeAdded();
+  };
+
+  // Handle job role selection
+  const handleRoleSelect = (value: string) => {
+    const role = jobRoles.find(r => r.name.toLowerCase() === value.toLowerCase());
+    if (role) {
+      setRoleId(role.id);
+      setOpenRoleCombobox(false);
+    }
+  };
+  
+  const handleJobRolesUpdated = () => {
+    if (companyId) {
+      loadJobRoles(companyId);
+    }
   };
 
   // Only render dialog content when dialog is open to avoid command component issues
@@ -283,10 +305,13 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
                           role="combobox"
                           aria-expanded={openRoleCombobox}
                           className="w-full justify-between"
+                          disabled={!companyId}
                         >
                           {roleId && hasRoles
                             ? jobRoles.find((role) => role.id === roleId)?.name
-                            : "Selecione uma função..."}
+                            : !companyId 
+                              ? "Selecione uma empresa primeiro"
+                              : "Selecione uma função..."}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
@@ -301,10 +326,7 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
                                   <CommandItem
                                     key={role.id}
                                     value={role.name}
-                                    onSelect={() => {
-                                      setRoleId(role.id === roleId ? "" : role.id);
-                                      setOpenRoleCombobox(false);
-                                    }}
+                                    onSelect={handleRoleSelect}
                                   >
                                     <Check
                                       className={cn(
@@ -321,7 +343,9 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
                         ) : (
                           <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
                             <FolderX className="mr-2 h-4 w-4" />
-                            Nenhuma função cadastrada ainda 😟
+                            {companyId 
+                              ? "Nenhuma função cadastrada ainda para esta empresa 😟" 
+                              : "Selecione uma empresa primeiro"}
                           </div>
                         )}
                       </PopoverContent>
@@ -333,6 +357,7 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
                     size="icon"
                     onClick={() => setIsJobRolesModalOpen(true)}
                     title="Gerenciar funções"
+                    disabled={!companyId}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -350,7 +375,8 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
         <JobRolesModal 
           open={isJobRolesModalOpen} 
           onOpenChange={setIsJobRolesModalOpen}
-          onRolesUpdated={loadJobRoles}
+          onRolesUpdated={handleJobRolesUpdated}
+          preselectedCompanyId={companyId}
         />
       )}
     </>

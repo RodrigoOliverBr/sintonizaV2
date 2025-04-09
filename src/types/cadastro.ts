@@ -14,6 +14,7 @@ export interface Department {
 export interface JobRole {
   id: string;
   name: string;
+  companyId: string; // Added companyId to associate roles with companies
 }
 
 export interface Employee {

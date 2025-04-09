@@ -65,7 +65,10 @@ export default {
 				},
 				// Cores do eSocial Brasil
 				esocial: {
-					blue: '#1EAEDB',
+					blue: '#1EAEDB',          // Azul principal
+					oceanBlue: '#2271B3',     // Azul mais escuro do logo
+					green: '#4CA146',         // Verde do ícone
+					yellow: '#F8C300',        // Amarelo do ícone 
 					lightGray: '#F1F1F1',
 					gray: '#C8C8C9',
 					darkGray: '#333333'

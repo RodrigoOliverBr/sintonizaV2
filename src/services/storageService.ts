@@ -208,12 +208,6 @@ export const updateEmployee = (employee: Employee): void => {
   localStorage.setItem(EMPLOYEES_KEY, JSON.stringify(updatedEmployees));
 };
 
-export const deleteEmployee = (id: string): void => {
-  const employees = getEmployees();
-  const filteredEmployees = employees.filter(e => e.id !== id);
-  localStorage.setItem(EMPLOYEES_KEY, JSON.stringify(filteredEmployees));
-};
-
 export const getDepartmentById = (companyId: string, departmentId: string): Department | undefined => {
   const company = getCompanyById(companyId);
   return company?.departments?.find(d => d.id === departmentId);
@@ -285,7 +279,7 @@ export const deleteFormResultsByEmployeeId = (employeeId: string): void => {
   localStorage.setItem(FORM_RESULTS_KEY, JSON.stringify(filteredResults));
 };
 
-// Also update deleteEmployee to remove form results
+// Keep only this enhanced version of deleteEmployee that also removes form results
 export const deleteEmployee = (id: string): void => {
   const employees = getEmployees();
   const filteredEmployees = employees.filter(e => e.id !== id);

@@ -1,6 +1,8 @@
 
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 interface HeaderProps {
   title?: string;
@@ -8,6 +10,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ title }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   
   const getPageTitle = () => {
     if (title) return title;
@@ -27,6 +30,12 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
         return "Formulário ISTAS21-BR";
     }
   };
+  
+  const handleLogout = () => {
+    localStorage.removeItem("sintonia:userType");
+    localStorage.removeItem("sintonia:currentCliente");
+    navigate("/login");
+  };
 
   return (
     <header className="bg-white shadow print:hidden relative">
@@ -42,12 +51,23 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
               {getPageTitle()}
             </h1>
           </div>
-          <div className="absolute top-0 right-0 p-2">
-            <img 
-              src="/lovable-uploads/55c55435-602d-4685-ade6-6d83d636842d.png" 
-              alt="eSocial Brasil Logo" 
-              className="h-12" 
-            />
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="flex items-center gap-1"
+            >
+              <LogOut size={16} />
+              <span className="hidden sm:inline">Sair</span>
+            </Button>
+            <div className="p-2">
+              <img 
+                src="/lovable-uploads/55c55435-602d-4685-ade6-6d83d636842d.png" 
+                alt="eSocial Brasil Logo" 
+                className="h-12" 
+              />
+            </div>
           </div>
         </div>
       </div>

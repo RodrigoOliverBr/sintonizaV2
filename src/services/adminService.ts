@@ -1,0 +1,428 @@
+
+import { Cliente, Plano, Contrato, Fatura, StatusFatura } from "@/types/admin";
+
+// Keys de localStorage
+const CLIENTES_KEY = "sintonia:clientes";
+const PLANOS_KEY = "sintonia:planos";
+const CONTRATOS_KEY = "sintonia:contratos";
+const FATURAS_KEY = "sintonia:faturas";
+const ADMIN_USER_KEY = "sintonia:admin";
+
+// Usuário admin padrão
+const defaultAdminUser = {
+  username: "admin",
+  password: "admin123",
+};
+
+// Cliente de exemplo
+const clientesIniciais: Cliente[] = [
+  {
+    id: "1",
+    nome: "eSocial Brasil",
+    tipo: "juridica",
+    numeroEmpregados: 50,
+    dataInclusao: Date.now(),
+    situacao: "liberado",
+    cpfCnpj: "12.345.678/0001-90",
+    email: "contato@esocial.com.br",
+    telefone: "(11) 99999-9999",
+    endereco: "Av. Paulista, 1000",
+    cidade: "São Paulo",
+    estado: "SP",
+    cep: "01310-100",
+    contato: "João Silva"
+  },
+  {
+    id: "2",
+    nome: "Tech Solutions Ltda.",
+    tipo: "juridica",
+    numeroEmpregados: 25,
+    dataInclusao: Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 dias atrás
+    situacao: "liberado",
+    cpfCnpj: "98.765.432/0001-10",
+    email: "contato@techsolutions.com.br",
+    telefone: "(11) 88888-8888",
+    endereco: "Rua Augusta, 500",
+    cidade: "São Paulo",
+    estado: "SP",
+    cep: "01305-000",
+    contato: "Maria Oliveira"
+  }
+];
+
+// Planos iniciais
+const planosIniciais: Plano[] = [
+  {
+    id: "1",
+    nome: "Básico",
+    descricao: "Plano básico para pequenas empresas",
+    valorMensal: 199.90,
+    duracao: 12,
+    recursos: ["Até 50 empregados", "Relatórios básicos", "Suporte por email"],
+    ativo: true
+  },
+  {
+    id: "2",
+    nome: "Profissional",
+    descricao: "Plano completo para médias empresas",
+    valorMensal: 399.90,
+    duracao: 12,
+    recursos: ["Até 200 empregados", "Relatórios avançados", "Suporte prioritário", "Treinamento incluído"],
+    ativo: true
+  },
+  {
+    id: "3",
+    nome: "Enterprise",
+    descricao: "Solução completa para grandes empresas",
+    valorMensal: 999.90,
+    duracao: 12,
+    recursos: ["Empregados ilimitados", "Todos os relatórios", "Suporte 24/7", "Treinamento premium", "Integração personalizada"],
+    ativo: true
+  }
+];
+
+// Contratos iniciais
+const contratosIniciais: Contrato[] = [
+  {
+    id: "1",
+    numero: "CONT-2025-001",
+    clienteId: "1",
+    planoId: "3",
+    dataInicio: Date.now() - 60 * 24 * 60 * 60 * 1000, // 60 dias atrás
+    dataFim: Date.now() + 305 * 24 * 60 * 60 * 1000, // em 305 dias
+    valorMensal: 999.90,
+    status: "ativo",
+    taxaImplantacao: 500,
+    observacoes: "Cliente piloto",
+    cicloFaturamento: "mensal"
+  },
+  {
+    id: "2",
+    numero: "CONT-2025-002",
+    clienteId: "2",
+    planoId: "2",
+    dataInicio: Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 dias atrás
+    dataFim: Date.now() + 335 * 24 * 60 * 60 * 1000, // em 335 dias
+    valorMensal: 399.90,
+    status: "ativo",
+    taxaImplantacao: 300,
+    observacoes: "",
+    cicloFaturamento: "mensal"
+  }
+];
+
+// Faturas iniciais
+const faturasIniciais: Fatura[] = [
+  {
+    id: "1",
+    numero: "FAT-2025-001",
+    clienteId: "1",
+    contratoId: "1",
+    dataEmissao: Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 dias atrás
+    dataVencimento: Date.now() - 15 * 24 * 60 * 60 * 1000, // 15 dias atrás
+    valor: 999.90,
+    status: "pago",
+    referencia: "03/2025"
+  },
+  {
+    id: "2",
+    numero: "FAT-2025-002",
+    clienteId: "1",
+    contratoId: "1",
+    dataEmissao: Date.now() - 5 * 24 * 60 * 60 * 1000, // 5 dias atrás
+    dataVencimento: Date.now() + 10 * 24 * 60 * 60 * 1000, // em 10 dias
+    valor: 999.90,
+    status: "pendente",
+    referencia: "04/2025"
+  },
+  {
+    id: "3",
+    numero: "FAT-2025-003",
+    clienteId: "2",
+    contratoId: "2",
+    dataEmissao: Date.now() - 10 * 24 * 60 * 60 * 1000, // 10 dias atrás
+    dataVencimento: Date.now() + 5 * 24 * 60 * 60 * 1000, // em 5 dias
+    valor: 399.90,
+    status: "pendente",
+    referencia: "04/2025"
+  }
+];
+
+// Inicializar dados no localStorage
+const inicializarDados = () => {
+  if (!localStorage.getItem(CLIENTES_KEY)) {
+    localStorage.setItem(CLIENTES_KEY, JSON.stringify(clientesIniciais));
+  }
+  
+  if (!localStorage.getItem(PLANOS_KEY)) {
+    localStorage.setItem(PLANOS_KEY, JSON.stringify(planosIniciais));
+  }
+  
+  if (!localStorage.getItem(CONTRATOS_KEY)) {
+    localStorage.setItem(CONTRATOS_KEY, JSON.stringify(contratosIniciais));
+  }
+  
+  if (!localStorage.getItem(FATURAS_KEY)) {
+    localStorage.setItem(FATURAS_KEY, JSON.stringify(faturasIniciais));
+  }
+  
+  if (!localStorage.getItem(ADMIN_USER_KEY)) {
+    localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(defaultAdminUser));
+  }
+};
+
+// Inicializar dados ao carregar o serviço
+inicializarDados();
+
+// Clientes
+export const getClientes = (): Cliente[] => {
+  const clientes = localStorage.getItem(CLIENTES_KEY);
+  if (!clientes) {
+    return [];
+  }
+  return JSON.parse(clientes);
+};
+
+export const getClienteById = (id: string): Cliente | undefined => {
+  return getClientes().find(c => c.id === id);
+};
+
+export const addCliente = (cliente: Omit<Cliente, "id" | "dataInclusao">): Cliente => {
+  const clientes = getClientes();
+  const newCliente: Cliente = {
+    ...cliente,
+    id: Date.now().toString(),
+    dataInclusao: Date.now()
+  };
+  localStorage.setItem(CLIENTES_KEY, JSON.stringify([...clientes, newCliente]));
+  return newCliente;
+};
+
+export const updateCliente = (cliente: Cliente): void => {
+  const clientes = getClientes();
+  const updatedClientes = clientes.map(c => c.id === cliente.id ? cliente : c);
+  localStorage.setItem(CLIENTES_KEY, JSON.stringify(updatedClientes));
+};
+
+export const deleteCliente = (id: string): void => {
+  const clientes = getClientes();
+  const filteredClientes = clientes.filter(c => c.id !== id);
+  localStorage.setItem(CLIENTES_KEY, JSON.stringify(filteredClientes));
+  
+  // Excluir contratos e faturas do cliente
+  const contratos = getContratos();
+  const filteredContratos = contratos.filter(c => c.clienteId !== id);
+  localStorage.setItem(CONTRATOS_KEY, JSON.stringify(filteredContratos));
+  
+  const faturas = getFaturas();
+  const filteredFaturas = faturas.filter(f => f.clienteId !== id);
+  localStorage.setItem(FATURAS_KEY, JSON.stringify(filteredFaturas));
+};
+
+// Planos
+export const getPlanos = (): Plano[] => {
+  const planos = localStorage.getItem(PLANOS_KEY);
+  if (!planos) {
+    return [];
+  }
+  return JSON.parse(planos);
+};
+
+export const getPlanoById = (id: string): Plano | undefined => {
+  return getPlanos().find(p => p.id === id);
+};
+
+export const addPlano = (plano: Omit<Plano, "id">): Plano => {
+  const planos = getPlanos();
+  const newPlano: Plano = {
+    ...plano,
+    id: Date.now().toString()
+  };
+  localStorage.setItem(PLANOS_KEY, JSON.stringify([...planos, newPlano]));
+  return newPlano;
+};
+
+export const updatePlano = (plano: Plano): void => {
+  const planos = getPlanos();
+  const updatedPlanos = planos.map(p => p.id === plano.id ? plano : p);
+  localStorage.setItem(PLANOS_KEY, JSON.stringify(updatedPlanos));
+};
+
+export const deletePlano = (id: string): void => {
+  const planos = getPlanos();
+  const filteredPlanos = planos.filter(p => p.id !== id);
+  localStorage.setItem(PLANOS_KEY, JSON.stringify(filteredPlanos));
+};
+
+// Contratos
+export const getContratos = (): Contrato[] => {
+  const contratos = localStorage.getItem(CONTRATOS_KEY);
+  if (!contratos) {
+    return [];
+  }
+  return JSON.parse(contratos);
+};
+
+export const getContratosByClienteId = (clienteId: string): Contrato[] => {
+  return getContratos().filter(c => c.clienteId === clienteId);
+};
+
+export const getContratoById = (id: string): Contrato | undefined => {
+  return getContratos().find(c => c.id === id);
+};
+
+export const gerarNumeroContrato = (): string => {
+  const contratos = getContratos();
+  const year = new Date().getFullYear();
+  const num = contratos.length + 1;
+  return `CONT-${year}-${num.toString().padStart(3, '0')}`;
+};
+
+export const addContrato = (contrato: Omit<Contrato, "id" | "numero">): Contrato => {
+  const contratos = getContratos();
+  const newContrato: Contrato = {
+    ...contrato,
+    id: Date.now().toString(),
+    numero: gerarNumeroContrato()
+  };
+  localStorage.setItem(CONTRATOS_KEY, JSON.stringify([...contratos, newContrato]));
+  return newContrato;
+};
+
+export const updateContrato = (contrato: Contrato): void => {
+  const contratos = getContratos();
+  const updatedContratos = contratos.map(c => c.id === contrato.id ? contrato : c);
+  localStorage.setItem(CONTRATOS_KEY, JSON.stringify(updatedContratos));
+};
+
+export const deleteContrato = (id: string): void => {
+  const contratos = getContratos();
+  const filteredContratos = contratos.filter(c => c.id !== id);
+  localStorage.setItem(CONTRATOS_KEY, JSON.stringify(filteredContratos));
+  
+  // Excluir faturas do contrato
+  const faturas = getFaturas();
+  const filteredFaturas = faturas.filter(f => f.contratoId !== id);
+  localStorage.setItem(FATURAS_KEY, JSON.stringify(filteredFaturas));
+};
+
+// Faturas
+export const getFaturas = (): Fatura[] => {
+  const faturas = localStorage.getItem(FATURAS_KEY);
+  if (!faturas) {
+    return [];
+  }
+  return JSON.parse(faturas);
+};
+
+export const getFaturasByClienteId = (clienteId: string): Fatura[] => {
+  return getFaturas().filter(f => f.clienteId === clienteId);
+};
+
+export const getFaturasByContratoId = (contratoId: string): Fatura[] => {
+  return getFaturas().filter(f => f.contratoId === contratoId);
+};
+
+export const getFaturaById = (id: string): Fatura | undefined => {
+  return getFaturas().find(f => f.id === id);
+};
+
+export const gerarNumeroFatura = (): string => {
+  const faturas = getFaturas();
+  const year = new Date().getFullYear();
+  const num = faturas.length + 1;
+  return `FAT-${year}-${num.toString().padStart(3, '0')}`;
+};
+
+export const gerarReferenciaFatura = (date: Date = new Date()): string => {
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${month}/${year}`;
+};
+
+export const addFatura = (fatura: Omit<Fatura, "id" | "numero" | "referencia">): Fatura => {
+  const faturas = getFaturas();
+  const newFatura: Fatura = {
+    ...fatura,
+    id: Date.now().toString(),
+    numero: gerarNumeroFatura(),
+    referencia: gerarReferenciaFatura(new Date(fatura.dataEmissao))
+  };
+  localStorage.setItem(FATURAS_KEY, JSON.stringify([...faturas, newFatura]));
+  return newFatura;
+};
+
+export const updateFatura = (fatura: Fatura): void => {
+  const faturas = getFaturas();
+  const updatedFaturas = faturas.map(f => f.id === fatura.id ? fatura : f);
+  localStorage.setItem(FATURAS_KEY, JSON.stringify(updatedFaturas));
+};
+
+export const deleteFatura = (id: string): void => {
+  const faturas = getFaturas();
+  const filteredFaturas = faturas.filter(f => f.id !== id);
+  localStorage.setItem(FATURAS_KEY, JSON.stringify(filteredFaturas));
+};
+
+// Dashboard stats
+export const getDashboardStats = () => {
+  const clientes = getClientes();
+  const contratos = getContratos();
+  const faturas = getFaturas();
+  
+  const clientesAtivos = clientes.filter(c => c.situacao === 'liberado').length;
+  const clientesBloqueados = clientes.filter(c => c.situacao === 'bloqueado').length;
+  
+  const contratosAtivos = contratos.filter(c => c.status === 'ativo').length;
+  const contratosEmAnalise = contratos.filter(c => c.status === 'em-analise').length;
+  const contratosCancelados = contratos.filter(c => c.status === 'cancelado').length;
+  
+  const faturasPendentes = faturas.filter(f => f.status === 'pendente');
+  const faturasPagas = faturas.filter(f => f.status === 'pago');
+  const faturasAtrasadas = faturas.filter(f => f.status === 'atrasado');
+  
+  const valorTotalPendente = faturasPendentes.reduce((acc, f) => acc + f.valor, 0);
+  const valorTotalPago = faturasPagas.reduce((acc, f) => acc + f.valor, 0);
+  const valorTotalAtrasado = faturasAtrasadas.reduce((acc, f) => acc + f.valor, 0);
+  
+  return {
+    clientesAtivos,
+    clientesBloqueados,
+    totalClientes: clientes.length,
+    
+    contratosAtivos,
+    contratosEmAnalise,
+    contratosCancelados,
+    totalContratos: contratos.length,
+    
+    faturasPendentes: faturasPendentes.length,
+    faturasPagas: faturasPagas.length,
+    faturasAtrasadas: faturasAtrasadas.length,
+    totalFaturas: faturas.length,
+    
+    valorTotalPendente,
+    valorTotalPago,
+    valorTotalAtrasado,
+    valorTotal: valorTotalPendente + valorTotalPago + valorTotalAtrasado
+  };
+};
+
+// Autenticação de admin
+export const checkAdminCredentials = (username: string, password: string): boolean => {
+  const admin = JSON.parse(localStorage.getItem(ADMIN_USER_KEY) || '{}');
+  return admin.username === username && admin.password === password;
+};
+
+// Verifica cliente existente para login no sistema principal
+export const checkClienteCredentials = (cpfCnpj: string, password: string): Cliente | null => {
+  const clientes = getClientes();
+  const cliente = clientes.find(c => c.cpfCnpj === cpfCnpj && c.situacao === 'liberado');
+  
+  // Suponha que a senha é o CPF/CNPJ invertido (apenas para demonstração)
+  // Em uma aplicação real, isso deveria usar hash seguro e salt
+  if (cliente && password === cpfCnpj.split('').reverse().join('').replace(/[^0-9]/g, '')) {
+    return cliente;
+  }
+  
+  return null;
+};

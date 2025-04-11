@@ -3,7 +3,8 @@ import React from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { getDashboardStats, getClientes, getContratos, getPlanos } from "@/services/adminService";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, LineChart } from "@/components/ui/chart";
+import { ChartContainer } from "@/components/ui/chart";
+import { BarChart } from "@/components/ui/BarChart";
 import { Building2, Briefcase, CreditCard, Users, Check, Clock, AlertTriangle } from "lucide-react";
 
 const DashboardPage: React.FC = () => {
@@ -31,15 +32,12 @@ const DashboardPage: React.FC = () => {
     meses.push(`${mes}/${ano}`);
   }
   
-  const faturamentoMensal = {
-    categories: meses,
-    series: [
-      {
-        name: "Receita",
-        data: [15000, 18000, 22000, 21000, 24000, 28000],
-      }
-    ]
-  };
+  const faturamentoMensal = meses.map((mes, index) => {
+    return {
+      month: mes,
+      receita: [15000, 18000, 22000, 21000, 24000, 28000][index]
+    };
+  });
 
   return (
     <AdminLayout title="Dashboard">
@@ -163,9 +161,9 @@ const DashboardPage: React.FC = () => {
                 data={contratosPorPlano}
                 index="name"
                 categories={["value"]}
-                colors={["blue"]}
-                yAxisWidth={48}
-                height={300}
+                colors={["#3b82f6"]}
+                valueFormatter={(value) => `${value} contratos`}
+                className="h-[300px]"
               />
             </CardContent>
           </Card>
@@ -177,15 +175,23 @@ const DashboardPage: React.FC = () => {
                 Faturamento dos últimos 6 meses
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <LineChart 
-                data={faturamentoMensal}
-                index="categories"
-                categories={["Receita"]}
-                colors={["green"]}
-                yAxisWidth={48}
-                height={300}
-              />
+            <CardContent className="h-[300px]">
+              <ChartContainer 
+                className="h-full" 
+                config={{ 
+                  receita: { 
+                    color: "#22c55e" 
+                  } 
+                }}
+              >
+                <BarChart 
+                  data={faturamentoMensal}
+                  index="month"
+                  categories={["receita"]}
+                  colors={["#22c55e"]}
+                  valueFormatter={(value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)}
+                />
+              </ChartContainer>
             </CardContent>
           </Card>
         </div>

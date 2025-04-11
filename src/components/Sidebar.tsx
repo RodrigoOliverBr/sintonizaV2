@@ -39,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       <SheetContent side="left" className="p-0">
         <div className="flex flex-col h-full bg-white">
           <div className="p-4 border-b flex justify-between items-center">
-            <div className="font-semibold text-lg text-esocial-blue">ISTAS21-BR</div>
+            <div className="font-semibold text-lg text-esocial-blue">Sintonia</div>
             <Button
               variant="ghost"
               size="icon"
@@ -70,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
             <div className="flex items-center">
               <ClipboardList className="h-8 w-8 text-esocial-blue" />
               <span className="ml-2 text-xl font-semibold text-esocial-blue">
-                ISTAS21-BR
+                Sintonia
               </span>
             </div>
           </div>

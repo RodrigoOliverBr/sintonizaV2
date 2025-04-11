@@ -32,9 +32,16 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
     <header className="bg-white shadow print:hidden relative">
       <div className="mx-auto md:ml-64 px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <h1 className="text-2xl font-bold text-esocial-darkGray">
-            {getPageTitle()}
-          </h1>
+          <div className="flex items-center">
+            <img
+              src="/lovable-uploads/5fbfce9a-dae3-444b-99c8-9b92040ef7e2.png"
+              alt="Sintonia Logo"
+              className="h-8 mr-2 md:hidden"
+            />
+            <h1 className="text-2xl font-bold text-esocial-darkGray">
+              {getPageTitle()}
+            </h1>
+          </div>
           <div className="absolute top-0 right-0 p-2">
             <img 
               src="/lovable-uploads/55c55435-602d-4685-ade6-6d83d636842d.png" 

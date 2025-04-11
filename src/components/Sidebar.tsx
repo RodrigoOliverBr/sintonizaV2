@@ -39,7 +39,14 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       <SheetContent side="left" className="p-0">
         <div className="flex flex-col h-full bg-white">
           <div className="p-4 border-b flex justify-between items-center">
-            <div className="font-semibold text-lg text-esocial-blue">Sintonia</div>
+            <div className="flex items-center">
+              <img 
+                src="/lovable-uploads/5fbfce9a-dae3-444b-99c8-9b92040ef7e2.png" 
+                alt="Sintonia Logo" 
+                className="h-8 mr-2" 
+              />
+              <span className="font-semibold text-lg text-esocial-darkGray">Sintonia</span>
+            </div>
             <Button
               variant="ghost"
               size="icon"
@@ -68,8 +75,12 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200">
           <div className="flex items-center h-16 flex-shrink-0 px-4 border-b">
             <div className="flex items-center">
-              <ClipboardList className="h-8 w-8 text-esocial-blue" />
-              <span className="ml-2 text-xl font-semibold text-esocial-blue">
+              <img 
+                src="/lovable-uploads/5fbfce9a-dae3-444b-99c8-9b92040ef7e2.png" 
+                alt="Sintonia Logo" 
+                className="h-10 mr-2" 
+              />
+              <span className="text-xl font-semibold text-esocial-darkGray">
                 Sintonia
               </span>
             </div>

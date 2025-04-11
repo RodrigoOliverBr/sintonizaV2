@@ -1,4 +1,3 @@
-
 import { Cliente, Plano, Contrato, Fatura, StatusFatura } from "@/types/admin";
 
 // Keys de localStorage
@@ -10,11 +9,11 @@ const ADMIN_USER_KEY = "sintonia:admin";
 
 // Usuário admin padrão
 const defaultAdminUser = {
-  username: "admin",
+  email: "admin@prolife.com",
   password: "admin123",
 };
 
-// Cliente de exemplo
+// Cliente de exemplo para login por email
 const clientesIniciais: Cliente[] = [
   {
     id: "1",
@@ -40,7 +39,7 @@ const clientesIniciais: Cliente[] = [
     dataInclusao: Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 dias atrás
     situacao: "liberado",
     cpfCnpj: "98.765.432/0001-10",
-    email: "contato@techsolutions.com.br",
+    email: "client@empresa.com",
     telefone: "(11) 88888-8888",
     endereco: "Rua Augusta, 500",
     cidade: "São Paulo",
@@ -408,21 +407,38 @@ export const getDashboardStats = () => {
 };
 
 // Autenticação de admin
-export const checkAdminCredentials = (username: string, password: string): boolean => {
+export const checkAdminCredentials = (email: string, password: string): boolean => {
   const admin = JSON.parse(localStorage.getItem(ADMIN_USER_KEY) || '{}');
-  return admin.username === username && admin.password === password;
+  return (admin.email === email && admin.password === password) || 
+         (defaultAdminUser.email === email && defaultAdminUser.password === password);
 };
 
 // Verifica cliente existente para login no sistema principal
-export const checkClienteCredentials = (cpfCnpj: string, password: string): Cliente | null => {
+export const checkClienteCredentials = (email: string, password: string): Cliente | null => {
   const clientes = getClientes();
-  const cliente = clientes.find(c => c.cpfCnpj === cpfCnpj && c.situacao === 'liberado');
+  const cliente = clientes.find(c => c.email === email && c.situacao === 'liberado');
   
-  // Suponha que a senha é o CPF/CNPJ invertido (apenas para demonstração)
-  // Em uma aplicação real, isso deveria usar hash seguro e salt
-  if (cliente && password === cpfCnpj.split('').reverse().join('').replace(/[^0-9]/g, '')) {
+  // Para simplificar, verificamos se a senha é "client123" para o email especificado
+  if (cliente && (password === "client123" || password === cliente.cpfCnpj.split('').reverse().join('').replace(/[^0-9]/g, ''))) {
     return cliente;
   }
   
   return null;
+};
+
+// Verificar credenciais e determinar o tipo de usuário
+export const checkCredentials = (email: string, password: string): { isValid: boolean, userType: 'admin' | 'cliente' | null, userData?: any } => {
+  // Verificar se é admin
+  if (checkAdminCredentials(email, password)) {
+    return { isValid: true, userType: 'admin' };
+  }
+  
+  // Verificar se é cliente
+  const cliente = checkClienteCredentials(email, password);
+  if (cliente) {
+    return { isValid: true, userType: 'cliente', userData: cliente };
+  }
+  
+  // Nenhum usuário válido encontrado
+  return { isValid: false, userType: null };
 };

@@ -5,48 +5,40 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { checkAdminCredentials, checkClienteCredentials } from "@/services/adminService";
+import { checkCredentials } from "@/services/adminService";
 import { toast } from "sonner";
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const [adminUsername, setAdminUsername] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
-  const [clienteCpfCnpj, setClienteCpfCnpj] = useState("");
-  const [clientePassword, setClientePassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    if (checkAdminCredentials(adminUsername, adminPassword)) {
-      localStorage.setItem("sintonia:userType", "admin");
-      setTimeout(() => {
-        navigate("/admin/dashboard");
-        setIsLoading(false);
-      }, 1000);
-    } else {
-      toast.error("Credenciais inválidas para Administrador");
-      setIsLoading(false);
-    }
-  };
-
-  const handleClienteLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+    const result = checkCredentials(email, password);
     
-    const cliente = checkClienteCredentials(clienteCpfCnpj, clientePassword);
-    if (cliente) {
-      localStorage.setItem("sintonia:userType", "cliente");
-      localStorage.setItem("sintonia:currentCliente", JSON.stringify(cliente));
+    if (result.isValid) {
+      localStorage.setItem("sintonia:userType", result.userType as string);
+      
+      if (result.userType === 'cliente' && result.userData) {
+        localStorage.setItem("sintonia:currentCliente", JSON.stringify(result.userData));
+      }
+      
       setTimeout(() => {
-        navigate("/");
+        if (result.userType === 'admin') {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/");
+        }
         setIsLoading(false);
       }, 1000);
+      
+      toast.success(`Login realizado com sucesso como ${result.userType === 'admin' ? 'Administrador' : 'Cliente'}`);
     } else {
-      toast.error("Credenciais inválidas ou cliente bloqueado");
+      toast.error("Credenciais inválidas. Verifique seu e-mail e senha.");
       setIsLoading(false);
     }
   };
@@ -67,96 +59,48 @@ const LoginPage: React.FC = () => {
         </div>
 
         <Card>
-          <Tabs defaultValue="cliente">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="cliente">Cliente</TabsTrigger>
-              <TabsTrigger value="admin">Administrador</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="cliente">
-              <form onSubmit={handleClienteLogin}>
-                <CardHeader>
-                  <CardTitle>Login de Cliente</CardTitle>
-                  <CardDescription>
-                    Acesse seu sistema com suas credenciais
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="cpfCnpj">CPF/CNPJ</Label>
-                    <Input 
-                      id="cpfCnpj" 
-                      placeholder="Digite seu CPF ou CNPJ" 
-                      value={clienteCpfCnpj}
-                      onChange={(e) => setClienteCpfCnpj(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="clientePassword">Senha</Label>
-                    <Input 
-                      id="clientePassword" 
-                      type="password" 
-                      placeholder="Digite sua senha" 
-                      value={clientePassword}
-                      onChange={(e) => setClientePassword(e.target.value)}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground text-right">
-                      Para testes: use o CPF/CNPJ invertido como senha
-                    </p>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Carregando..." : "Entrar"}
-                  </Button>
-                </CardFooter>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="admin">
-              <form onSubmit={handleAdminLogin}>
-                <CardHeader>
-                  <CardTitle>Login de Administrador</CardTitle>
-                  <CardDescription>
-                    Acesse o painel administrativo do sistema
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Usuário</Label>
-                    <Input 
-                      id="username" 
-                      placeholder="Digite seu usuário" 
-                      value={adminUsername}
-                      onChange={(e) => setAdminUsername(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="adminPassword">Senha</Label>
-                    <Input 
-                      id="adminPassword" 
-                      type="password" 
-                      placeholder="Digite sua senha" 
-                      value={adminPassword}
-                      onChange={(e) => setAdminPassword(e.target.value)}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground text-right">
-                      Para testes: usuário = admin, senha = admin123
-                    </p>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Carregando..." : "Entrar"}
-                  </Button>
-                </CardFooter>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <form onSubmit={handleLogin}>
+            <CardHeader>
+              <CardTitle>Login</CardTitle>
+              <CardDescription>
+                Acesse o sistema com suas credenciais
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input 
+                  id="email" 
+                  type="email"
+                  placeholder="Digite seu e-mail" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="Digite sua senha" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <p className="text-xs text-muted-foreground text-right">
+                  Para testes: <br />
+                  Admin: admin@prolife.com / admin123<br />
+                  Cliente: client@empresa.com / client123
+                </p>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Carregando..." : "Entrar"}
+              </Button>
+            </CardFooter>
+          </form>
         </Card>
         
         <div className="text-center">

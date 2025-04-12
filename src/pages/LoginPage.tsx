@@ -59,6 +59,17 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  // Função auxiliar para preencher credenciais de teste
+  const preencherCredenciais = (tipo: 'admin' | 'cliente') => {
+    if (tipo === 'admin') {
+      setEmail("admin@prolife.com");
+      setPassword("admin123");
+    } else {
+      setEmail("client@empresa.com");
+      setPassword("client123");
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md space-y-6">
@@ -104,11 +115,30 @@ const LoginPage: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-                <p className="text-xs text-muted-foreground text-right">
-                  Para testes: <br />
-                  Admin: admin@prolife.com / admin123<br />
-                  Cliente: client@empresa.com / client123
-                </p>
+              </div>
+              <div className="text-sm text-muted-foreground pt-2">
+                <p className="font-semibold mb-1">Credenciais para teste:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs justify-start"
+                    onClick={() => preencherCredenciais('admin')}
+                  >
+                    Admin: admin@prolife.com
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs justify-start"
+                    onClick={() => preencherCredenciais('cliente')}
+                  >
+                    Cliente: client@empresa.com
+                  </Button>
+                </div>
+                <p className="text-xs mt-1 text-center">(Clique nas opções acima para preencher os campos)</p>
               </div>
             </CardContent>
             <CardFooter>

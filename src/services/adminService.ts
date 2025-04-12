@@ -147,27 +147,26 @@ const faturasIniciais: Fatura[] = [
   }
 ];
 
-// Inicializar dados no localStorage
+// Forçar a inicialização dos dados a cada carregamento do serviço
 const inicializarDados = () => {
-  if (!localStorage.getItem(CLIENTES_KEY)) {
-    localStorage.setItem(CLIENTES_KEY, JSON.stringify(clientesIniciais));
-  }
+  // Limpar dados existentes para garantir a consistência
+  localStorage.removeItem(CLIENTES_KEY);
+  localStorage.removeItem(PLANOS_KEY);
+  localStorage.removeItem(CONTRATOS_KEY);
+  localStorage.removeItem(FATURAS_KEY);
   
-  if (!localStorage.getItem(PLANOS_KEY)) {
-    localStorage.setItem(PLANOS_KEY, JSON.stringify(planosIniciais));
-  }
-  
-  if (!localStorage.getItem(CONTRATOS_KEY)) {
-    localStorage.setItem(CONTRATOS_KEY, JSON.stringify(contratosIniciais));
-  }
-  
-  if (!localStorage.getItem(FATURAS_KEY)) {
-    localStorage.setItem(FATURAS_KEY, JSON.stringify(faturasIniciais));
-  }
+  // Inicializar com dados padrão
+  localStorage.setItem(CLIENTES_KEY, JSON.stringify(clientesIniciais));
+  localStorage.setItem(PLANOS_KEY, JSON.stringify(planosIniciais));
+  localStorage.setItem(CONTRATOS_KEY, JSON.stringify(contratosIniciais));
+  localStorage.setItem(FATURAS_KEY, JSON.stringify(faturasIniciais));
   
   if (!localStorage.getItem(ADMIN_USER_KEY)) {
     localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(defaultAdminUser));
   }
+  
+  console.log("Dados inicializados com sucesso");
+  console.log("Clientes:", JSON.stringify(clientesIniciais));
 };
 
 // Inicializar dados ao carregar o serviço
@@ -417,23 +416,34 @@ export const checkAdminCredentials = (email: string, password: string): boolean 
 export const checkClienteCredentials = (email: string, password: string): Cliente | null => {
   console.log("Tentando autenticar cliente:", email);
   const clientes = getClientes();
+  console.log("Todos os clientes:", JSON.stringify(clientes));
   
   // Procurar por e-mail
-  const cliente = clientes.find(c => c.email === email && c.situacao === 'liberado');
-  console.log("Cliente encontrado:", cliente);
+  const cliente = clientes.find(c => c.email === email);
+  console.log("Cliente encontrado:", cliente ? JSON.stringify(cliente) : "Nenhum");
   
   if (cliente) {
-    // Verificação simplificada: aceita 'client123' ou a senha específica baseada no CPF/CNPJ
+    console.log("Situação do cliente:", cliente.situacao);
+    
+    // Verificar se o cliente está liberado
+    if (cliente.situacao !== 'liberado') {
+      console.log("Cliente está bloqueado");
+      return null;
+    }
+    
+    // Verificação simplificada: aceita 'client123' como senha padrão
     if (password === "client123") {
       console.log("Senha padrão aceita");
       return cliente;
     }
     
     // Verificação alternativa (mantida para compatibilidade)
-    const reverseCpfCnpj = cliente.cpfCnpj.split('').reverse().join('').replace(/[^0-9]/g, '');
-    if (password === reverseCpfCnpj) {
-      console.log("Senha baseada em CPF/CNPJ aceita");
-      return cliente;
+    if (cliente.cpfCnpj) {
+      const reverseCpfCnpj = cliente.cpfCnpj.split('').reverse().join('').replace(/[^0-9]/g, '');
+      if (password === reverseCpfCnpj) {
+        console.log("Senha baseada em CPF/CNPJ aceita");
+        return cliente;
+      }
     }
   }
   

@@ -415,30 +415,50 @@ export const checkAdminCredentials = (email: string, password: string): boolean 
 
 // Verifica cliente existente para login no sistema principal
 export const checkClienteCredentials = (email: string, password: string): Cliente | null => {
+  console.log("Tentando autenticar cliente:", email);
   const clientes = getClientes();
-  const cliente = clientes.find(c => c.email === email && c.situacao === 'liberado');
   
-  // Para simplificar, verificamos se a senha é "client123" para o email especificado
-  if (cliente && (password === "client123" || password === cliente.cpfCnpj.split('').reverse().join('').replace(/[^0-9]/g, ''))) {
-    return cliente;
+  // Procurar por e-mail
+  const cliente = clientes.find(c => c.email === email && c.situacao === 'liberado');
+  console.log("Cliente encontrado:", cliente);
+  
+  if (cliente) {
+    // Verificação simplificada: aceita 'client123' ou a senha específica baseada no CPF/CNPJ
+    if (password === "client123") {
+      console.log("Senha padrão aceita");
+      return cliente;
+    }
+    
+    // Verificação alternativa (mantida para compatibilidade)
+    const reverseCpfCnpj = cliente.cpfCnpj.split('').reverse().join('').replace(/[^0-9]/g, '');
+    if (password === reverseCpfCnpj) {
+      console.log("Senha baseada em CPF/CNPJ aceita");
+      return cliente;
+    }
   }
   
+  console.log("Autenticação de cliente falhou");
   return null;
 };
 
 // Verificar credenciais e determinar o tipo de usuário
 export const checkCredentials = (email: string, password: string): { isValid: boolean, userType: 'admin' | 'cliente' | null, userData?: any } => {
+  console.log("Verificando credenciais para:", email);
+  
   // Verificar se é admin
   if (checkAdminCredentials(email, password)) {
+    console.log("Admin autenticado com sucesso");
     return { isValid: true, userType: 'admin' };
   }
   
   // Verificar se é cliente
   const cliente = checkClienteCredentials(email, password);
   if (cliente) {
+    console.log("Cliente autenticado com sucesso");
     return { isValid: true, userType: 'cliente', userData: cliente };
   }
   
   // Nenhum usuário válido encontrado
+  console.log("Falha na autenticação");
   return { isValid: false, userType: null };
 };

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,12 +13,28 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Verificar se já está autenticado ao carregar
+  useEffect(() => {
+    const userType = localStorage.getItem("sintonia:userType");
+    if (userType) {
+      if (userType === 'admin') {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
+    }
+  }, [navigate]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
+    // Log para debug
+    console.log("Tentando login com:", email, password);
+    
     const result = checkCredentials(email, password);
+    console.log("Resultado da autenticação:", result);
     
     if (result.isValid) {
       localStorage.setItem("sintonia:userType", result.userType as string);

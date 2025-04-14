@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "@/components/AdminLayout";
@@ -10,9 +9,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pencil, Trash2, Plus, ExternalLink } from "lucide-react";
+import { Pencil, Trash2, Plus, ExternalLink, Lock, Unlock, Check, AlertTriangle } from "lucide-react";
 import { Cliente, TipoPessoa, ClienteStatus } from "@/types/admin";
-import { getClientes, addCliente, updateCliente, deleteCliente } from "@/services/adminService";
+import { getClientes, addCliente, updateCliente, deleteCliente, getFaturasByClienteId } from "@/services/adminService";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -25,7 +24,6 @@ const ClientesPage: React.FC = () => {
   const [currentCliente, setCurrentCliente] = useState<Cliente | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Form fields
   const [formNome, setFormNome] = useState("");
   const [formTipo, setFormTipo] = useState<TipoPessoa>("juridica");
   const [formNumeroEmpregados, setFormNumeroEmpregados] = useState(0);
@@ -149,10 +147,29 @@ const ClientesPage: React.FC = () => {
   };
   
   const handleAccessClienteArea = (cliente: Cliente) => {
-    // Em uma implementação real, isso poderia fazer login como o cliente
     localStorage.setItem("sintonia:userType", "cliente");
     localStorage.setItem("sintonia:currentCliente", JSON.stringify(cliente));
     navigate("/");
+  };
+  
+  const checkClienteStatus = (clienteId: string) => {
+    const faturas = getFaturasByClienteId(clienteId);
+    const hasOverdueFatura = faturas.some(
+      f => f.status === 'atrasado' || 
+      (f.status === 'pendente' && new Date(f.dataVencimento) < new Date())
+    );
+    return hasOverdueFatura ? 'atrasado' : 'em_dia';
+  };
+  
+  const handleToggleStatus = (cliente: Cliente) => {
+    const newStatus: ClienteStatus = cliente.situacao === 'liberado' ? 'bloqueado' : 'liberado';
+    const updatedCliente = {
+      ...cliente,
+      situacao: newStatus
+    };
+    updateCliente(updatedCliente);
+    refreshClientes();
+    toast.success(`Cliente ${newStatus === 'liberado' ? 'liberado' : 'bloqueado'} com sucesso!`);
   };
   
   const filteredClientes = clientes.filter(cliente => 
@@ -289,13 +306,14 @@ const ClientesPage: React.FC = () => {
                 <TableHead>Funcionários</TableHead>
                 <TableHead>Data de Inclusão</TableHead>
                 <TableHead>Situação</TableHead>
+                <TableHead>Status Pagamento</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredClientes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-4 text-muted-foreground">
                     Nenhum cliente encontrado.
                   </TableCell>
                 </TableRow>
@@ -314,6 +332,19 @@ const ClientesPage: React.FC = () => {
                         {cliente.situacao === "liberado" ? "Liberado" : "Bloqueado"}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      {checkClienteStatus(cliente.id) === 'em_dia' ? (
+                        <Badge variant="success" className="bg-green-500">
+                          <Check className="w-4 h-4 mr-1" />
+                          Em dia
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">
+                          <AlertTriangle className="w-4 h-4 mr-1" />
+                          Faturas atrasadas
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button 
@@ -323,6 +354,17 @@ const ClientesPage: React.FC = () => {
                           title="Acessar Área do Cliente"
                         >
                           <ExternalLink size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleToggleStatus(cliente)}
+                          title={cliente.situacao === 'liberado' ? 'Bloquear Acesso' : 'Liberar Acesso'}
+                        >
+                          {cliente.situacao === 'liberado' ? 
+                            <Lock size={16} /> : 
+                            <Unlock size={16} />
+                          }
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -348,7 +390,6 @@ const ClientesPage: React.FC = () => {
         </CardContent>
       </Card>
       
-      {/* Modal de Edição */}
       <Dialog open={openEditModal} onOpenChange={setOpenEditModal}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -442,7 +483,6 @@ const ClientesPage: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Modal de Exclusão */}
       <Dialog open={openDeleteModal} onOpenChange={setOpenDeleteModal}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

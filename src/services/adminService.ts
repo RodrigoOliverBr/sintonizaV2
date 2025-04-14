@@ -475,7 +475,6 @@ export const gerarFaturasProgramadas = (contrato: Contrato): Fatura[] => {
     const dataInicio = new Date(contrato.dataInicio);
     const dataFim = new Date(contrato.dataFim);
     
-    // Calcular diferença em meses/trimestres/anos conforme o ciclo
     switch (contrato.cicloFaturamento) {
       case 'mensal':
         quantidadeFaturas = (dataFim.getFullYear() - dataInicio.getFullYear()) * 12 + 
@@ -490,28 +489,55 @@ export const gerarFaturasProgramadas = (contrato: Contrato): Fatura[] => {
         break;
     }
     
-    // Garantir pelo menos 1 fatura
     quantidadeFaturas = Math.max(1, quantidadeFaturas);
   }
   
-  // Gerar as faturas
-  const dataInicio = new Date(contrato.dataInicio);
+  // Usar a data do primeiro vencimento como base
+  const dataPrimeiroVencimento = new Date(contrato.dataPrimeiroVencimento || contrato.dataInicio);
+  const dataEmissao = new Date(dataPrimeiroVencimento);
+  dataEmissao.setDate(dataEmissao.getDate() - 15); // Emissão 15 dias antes do vencimento
   
   // Verificar faturas existentes para este contrato
   const faturasExistentes = faturas.filter(f => f.contratoId === contrato.id);
   const referenciasExistentes = new Set(faturasExistentes.map(f => f.referencia));
   
+  // Gerar fatura de implantação se houver taxa
+  if (contrato.taxaImplantacao > 0) {
+    const faturaImplantacao: Omit<Fatura, "id" | "numero" | "referencia"> = {
+      clienteId: contrato.clienteId,
+      contratoId: contrato.id,
+      dataEmissao: new Date().getTime(),
+      dataVencimento: new Date(dataPrimeiroVencimento).getTime(),
+      valor: contrato.taxaImplantacao,
+      status: 'pendente'
+    };
+    const faturaAdicionada = addFatura(faturaImplantacao);
+    faturasGeradas.push(faturaAdicionada);
+  }
+
+  // Gerar as faturas recorrentes
   for (let i = 0; i < quantidadeFaturas; i++) {
-    // Calcular data de emissão (data atual para a primeira fatura, ou baseada no ciclo para as seguintes)
-    const dataEmissao = i === 0 ? new Date() : calcularDataProximaFatura(dataInicio, contrato.cicloFaturamento, i);
+    // Calcular data de vencimento baseada no ciclo
+    const dataVencimento = new Date(dataPrimeiroVencimento);
+    switch (contrato.cicloFaturamento) {
+      case 'mensal':
+        dataVencimento.setMonth(dataVencimento.getMonth() + i);
+        break;
+      case 'trimestral':
+        dataVencimento.setMonth(dataVencimento.getMonth() + (i * 3));
+        break;
+      case 'anual':
+        dataVencimento.setFullYear(dataVencimento.getFullYear() + i);
+        break;
+    }
     
-    // Calcular data de vencimento (15 dias após emissão)
-    const dataVencimento = new Date(dataEmissao);
-    dataVencimento.setDate(dataVencimento.getDate() + 15);
+    // Calcular data de emissão (15 dias antes do vencimento)
+    const dataEmissaoFatura = new Date(dataVencimento);
+    dataEmissaoFatura.setDate(dataEmissaoFatura.getDate() - 15);
     
     // Gerar referência para esta fatura
-    const month = (dataEmissao.getMonth() + 1).toString().padStart(2, '0');
-    const year = dataEmissao.getFullYear();
+    const month = (dataVencimento.getMonth() + 1).toString().padStart(2, '0');
+    const year = dataVencimento.getFullYear();
     const referencia = `${month}/${year}`;
     
     // Verificar se já existe uma fatura com esta referência para este contrato
@@ -524,17 +550,15 @@ export const gerarFaturasProgramadas = (contrato: Contrato): Fatura[] => {
     const novaFatura: Omit<Fatura, "id" | "numero" | "referencia"> = {
       clienteId: contrato.clienteId,
       contratoId: contrato.id,
-      dataEmissao: dataEmissao.getTime(),
+      dataEmissao: dataEmissaoFatura.getTime(),
       dataVencimento: dataVencimento.getTime(),
       valor: contrato.valorMensal,
-      status: i === 0 ? 'pendente' : 'pendente' // primeira pendente, demais programadas
+      status: 'pendente'
     };
     
     // Adicionar a fatura
     const faturaAdicionada = addFatura(novaFatura);
     faturasGeradas.push(faturaAdicionada);
-    
-    // Adicionar à lista de referências existentes para evitar duplicatas na mesma operação
     referenciasExistentes.add(faturaAdicionada.referencia);
   }
   

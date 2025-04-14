@@ -38,6 +38,7 @@ const ContratosPage: React.FC = () => {
   const [formPlanoId, setFormPlanoId] = useState("");
   const [formDataInicio, setFormDataInicio] = useState("");
   const [formDataFim, setFormDataFim] = useState("");
+  const [formDataPrimeiroVencimento, setFormDataPrimeiroVencimento] = useState(0);
   const [formValorMensal, setFormValorMensal] = useState(0);
   const [formStatus, setFormStatus] = useState<StatusContrato>("ativo");
   const [formTaxaImplantacao, setFormTaxaImplantacao] = useState(0);
@@ -82,6 +83,7 @@ const ContratosPage: React.FC = () => {
     setFormPlanoId("");
     setFormDataInicio("");
     setFormDataFim("");
+    setFormDataPrimeiroVencimento(0);
     setFormValorMensal(0);
     setFormStatus("ativo");
     setFormTaxaImplantacao(0);
@@ -100,6 +102,7 @@ const ContratosPage: React.FC = () => {
     setFormPlanoId(contrato.planoId);
     setFormDataInicio(formatToDateInput(contrato.dataInicio));
     setFormDataFim(formatToDateInput(contrato.dataFim));
+    setFormDataPrimeiroVencimento(contrato.dataPrimeiroVencimento);
     setFormValorMensal(contrato.valorMensal);
     setFormStatus(contrato.status);
     setFormTaxaImplantacao(contrato.taxaImplantacao);
@@ -147,6 +150,7 @@ const ContratosPage: React.FC = () => {
         planoId: formPlanoId,
         dataInicio,
         dataFim,
+        dataPrimeiroVencimento: formDataPrimeiroVencimento,
         valorMensal: formValorMensal,
         status: formStatus,
         taxaImplantacao: formTaxaImplantacao,
@@ -188,6 +192,7 @@ const ContratosPage: React.FC = () => {
         planoId: formPlanoId,
         dataInicio,
         dataFim,
+        dataPrimeiroVencimento: formDataPrimeiroVencimento,
         valorMensal: formValorMensal,
         status: formStatus,
         taxaImplantacao: formTaxaImplantacao,
@@ -325,6 +330,21 @@ const ContratosPage: React.FC = () => {
                           type="date"
                           value={formDataInicio} 
                           onChange={(e) => setFormDataInicio(e.target.value)} 
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dataPrimeiroVencimento">Data do Primeiro Vencimento</Label>
+                      <div className="flex items-center">
+                        <Calendar className="mr-2 h-4 w-4 opacity-50" />
+                        <Input 
+                          id="dataPrimeiroVencimento" 
+                          type="date"
+                          value={format(new Date(formDataPrimeiroVencimento || Date.now()), 'yyyy-MM-dd')} 
+                          onChange={(e) => {
+                            const date = new Date(e.target.value);
+                            setFormDataPrimeiroVencimento(date.getTime());
+                          }} 
                         />
                       </div>
                     </div>
@@ -594,6 +614,21 @@ const ContratosPage: React.FC = () => {
                     type="date"
                     value={formDataInicio} 
                     onChange={(e) => setFormDataInicio(e.target.value)} 
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dataPrimeiroVencimento">Data do Primeiro Vencimento</Label>
+                <div className="flex items-center">
+                  <Calendar className="mr-2 h-4 w-4 opacity-50" />
+                  <Input 
+                    id="dataPrimeiroVencimento" 
+                    type="date"
+                    value={format(new Date(formDataPrimeiroVencimento || Date.now()), 'yyyy-MM-dd')} 
+                    onChange={(e) => {
+                      const date = new Date(e.target.value);
+                      setFormDataPrimeiroVencimento(date.getTime());
+                    }} 
                   />
                 </div>
               </div>

@@ -44,6 +44,7 @@ export interface Contrato {
   planoId: string;
   dataInicio: number; // timestamp
   dataFim: number; // timestamp
+  dataPrimeiroVencimento: number; // timestamp para o primeiro vencimento
   valorMensal: number;
   status: StatusContrato;
   taxaImplantacao: number;

@@ -1,4 +1,3 @@
-
 export type ClienteStatus = 'liberado' | 'bloqueado';
 export type TipoPessoa = 'fisica' | 'juridica';
 export type StatusContrato = 'ativo' | 'em-analise' | 'cancelado';
@@ -34,12 +33,6 @@ export interface Plano {
   empregadosIlimitados: boolean;
   dataValidade: number | null; // timestamp ou null para sem vencimento
   semVencimento: boolean;
-  recursos: {
-    relatoriosAvancados: boolean;
-    suportePrioritario: boolean;
-    integracaoPersonalizada: boolean;
-    treinamentoIncluido: boolean;
-  };
   ativo: boolean;
 }
 

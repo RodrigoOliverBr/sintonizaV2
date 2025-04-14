@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -41,10 +40,6 @@ const PlanosPage: React.FC = () => {
   const [formEmpregadosIlimitados, setFormEmpregadosIlimitados] = useState(false);
   const [formDataValidade, setFormDataValidade] = useState<Date | null>(null);
   const [formSemVencimento, setFormSemVencimento] = useState(false);
-  const [formRelatoriosAvancados, setFormRelatoriosAvancados] = useState(false);
-  const [formSuportePrioritario, setFormSuportePrioritario] = useState(false);
-  const [formIntegracaoPersonalizada, setFormIntegracaoPersonalizada] = useState(false);
-  const [formTreinamentoIncluido, setFormTreinamentoIncluido] = useState(false);
   const [formAtivo, setFormAtivo] = useState(true);
   
   useEffect(() => {
@@ -70,12 +65,6 @@ const PlanosPage: React.FC = () => {
       empregadosIlimitados: true,
       dataValidade: null,
       semVencimento: true,
-      recursos: {
-        relatoriosAvancados: true,
-        suportePrioritario: true,
-        integracaoPersonalizada: true,
-        treinamentoIncluido: true
-      },
       ativo: true
     });
     
@@ -91,12 +80,6 @@ const PlanosPage: React.FC = () => {
       empregadosIlimitados: false,
       dataValidade: new Date(new Date().setMonth(new Date().getMonth() + 12)).getTime(),
       semVencimento: false,
-      recursos: {
-        relatoriosAvancados: true,
-        suportePrioritario: false,
-        integracaoPersonalizada: false,
-        treinamentoIncluido: false
-      },
       ativo: true
     });
     
@@ -112,12 +95,6 @@ const PlanosPage: React.FC = () => {
       empregadosIlimitados: false,
       dataValidade: new Date(new Date().setDate(new Date().getDate() + 30)).getTime(),
       semVencimento: false,
-      recursos: {
-        relatoriosAvancados: false,
-        suportePrioritario: false,
-        integracaoPersonalizada: false,
-        treinamentoIncluido: false
-      },
       ativo: true
     });
     
@@ -139,10 +116,6 @@ const PlanosPage: React.FC = () => {
     setFormEmpregadosIlimitados(false);
     setFormDataValidade(null);
     setFormSemVencimento(false);
-    setFormRelatoriosAvancados(false);
-    setFormSuportePrioritario(false);
-    setFormIntegracaoPersonalizada(false);
-    setFormTreinamentoIncluido(false);
     setFormAtivo(true);
   };
   
@@ -158,10 +131,6 @@ const PlanosPage: React.FC = () => {
     setFormEmpregadosIlimitados(plano.empregadosIlimitados);
     setFormDataValidade(plano.dataValidade ? new Date(plano.dataValidade) : null);
     setFormSemVencimento(plano.semVencimento);
-    setFormRelatoriosAvancados(plano.recursos.relatoriosAvancados);
-    setFormSuportePrioritario(plano.recursos.suportePrioritario);
-    setFormIntegracaoPersonalizada(plano.recursos.integracaoPersonalizada);
-    setFormTreinamentoIncluido(plano.recursos.treinamentoIncluido);
     setFormAtivo(plano.ativo);
     setOpenEditModal(true);
   };
@@ -184,12 +153,6 @@ const PlanosPage: React.FC = () => {
         empregadosIlimitados: formEmpregadosIlimitados,
         dataValidade: formSemVencimento ? null : (formDataValidade ? formDataValidade.getTime() : null),
         semVencimento: formSemVencimento,
-        recursos: {
-          relatoriosAvancados: formRelatoriosAvancados,
-          suportePrioritario: formSuportePrioritario,
-          integracaoPersonalizada: formIntegracaoPersonalizada,
-          treinamentoIncluido: formTreinamentoIncluido
-        },
         ativo: formAtivo
       });
       refreshPlanos();
@@ -217,12 +180,6 @@ const PlanosPage: React.FC = () => {
         empregadosIlimitados: formEmpregadosIlimitados,
         dataValidade: formSemVencimento ? null : (formDataValidade ? formDataValidade.getTime() : null),
         semVencimento: formSemVencimento,
-        recursos: {
-          relatoriosAvancados: formRelatoriosAvancados,
-          suportePrioritario: formSuportePrioritario,
-          integracaoPersonalizada: formIntegracaoPersonalizada,
-          treinamentoIncluido: formTreinamentoIncluido
-        },
         ativo: formAtivo
       });
       refreshPlanos();
@@ -416,43 +373,6 @@ const PlanosPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Recursos Incluídos</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="relatoriosAvancados" 
-                          checked={formRelatoriosAvancados}
-                          onCheckedChange={(checked) => setFormRelatoriosAvancados(checked === true)}
-                        />
-                        <Label htmlFor="relatoriosAvancados" className="font-normal">Relatórios avançados</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="suportePrioritario" 
-                          checked={formSuportePrioritario}
-                          onCheckedChange={(checked) => setFormSuportePrioritario(checked === true)}
-                        />
-                        <Label htmlFor="suportePrioritario" className="font-normal">Suporte prioritário</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="integracaoPersonalizada" 
-                          checked={formIntegracaoPersonalizada}
-                          onCheckedChange={(checked) => setFormIntegracaoPersonalizada(checked === true)}
-                        />
-                        <Label htmlFor="integracaoPersonalizada" className="font-normal">Integração personalizada</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="treinamentoIncluido" 
-                          checked={formTreinamentoIncluido}
-                          onCheckedChange={(checked) => setFormTreinamentoIncluido(checked === true)}
-                        />
-                        <Label htmlFor="treinamentoIncluido" className="font-normal">Treinamento incluído</Label>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
                     <Label>Status do Plano</Label>
                     <div className="flex items-center space-x-2">
                       <Switch 
@@ -491,7 +411,6 @@ const PlanosPage: React.FC = () => {
                 <TableHead>Valores</TableHead>
                 <TableHead>Limites</TableHead>
                 <TableHead>Validade</TableHead>
-                <TableHead>Recursos</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -499,7 +418,7 @@ const PlanosPage: React.FC = () => {
             <TableBody>
               {filteredPlanos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-4 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
                     Nenhum plano encontrado.
                   </TableCell>
                 </TableRow>
@@ -526,30 +445,6 @@ const PlanosPage: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       {formatarDataValidade(plano)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1 max-w-[200px]">
-                        {plano.recursos.relatoriosAvancados && (
-                          <Badge variant="outline" className="text-xs">
-                            Relatórios
-                          </Badge>
-                        )}
-                        {plano.recursos.suportePrioritario && (
-                          <Badge variant="outline" className="text-xs">
-                            Suporte
-                          </Badge>
-                        )}
-                        {plano.recursos.integracaoPersonalizada && (
-                          <Badge variant="outline" className="text-xs">
-                            Integração
-                          </Badge>
-                        )}
-                        {plano.recursos.treinamentoIncluido && (
-                          <Badge variant="outline" className="text-xs">
-                            Treinamento
-                          </Badge>
-                        )}
-                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={plano.ativo ? "default" : "secondary"}>
@@ -711,43 +606,6 @@ const PlanosPage: React.FC = () => {
                     </PopoverContent>
                   </Popover>
                 )}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Recursos Incluídos</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="edit-relatoriosAvancados" 
-                    checked={formRelatoriosAvancados}
-                    onCheckedChange={(checked) => setFormRelatoriosAvancados(checked === true)}
-                  />
-                  <Label htmlFor="edit-relatoriosAvancados" className="font-normal">Relatórios avançados</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="edit-suportePrioritario" 
-                    checked={formSuportePrioritario}
-                    onCheckedChange={(checked) => setFormSuportePrioritario(checked === true)}
-                  />
-                  <Label htmlFor="edit-suportePrioritario" className="font-normal">Suporte prioritário</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="edit-integracaoPersonalizada" 
-                    checked={formIntegracaoPersonalizada}
-                    onCheckedChange={(checked) => setFormIntegracaoPersonalizada(checked === true)}
-                  />
-                  <Label htmlFor="edit-integracaoPersonalizada" className="font-normal">Integração personalizada</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="edit-treinamentoIncluido" 
-                    checked={formTreinamentoIncluido}
-                    onCheckedChange={(checked) => setFormTreinamentoIncluido(checked === true)}
-                  />
-                  <Label htmlFor="edit-treinamentoIncluido" className="font-normal">Treinamento incluído</Label>
-                </div>
               </div>
             </div>
             <div className="space-y-2">

@@ -1,0 +1,71 @@
+
+import React from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Fatura, Cliente, Contrato } from "@/types/admin";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+interface InvoicePreviewProps {
+  fatura: Fatura;
+  cliente: Cliente;
+  contrato: Contrato;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const InvoicePreview = ({ fatura, cliente, contrato, open, onOpenChange }: InvoicePreviewProps) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl print:shadow-none print:border-none" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <div className="p-8 space-y-6 print:p-0">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-2xl font-bold">FATURA</h1>
+              <p className="text-muted-foreground">Nº {fatura.numero}</p>
+            </div>
+            <div className="text-right">
+              <p>Data de Emissão: {format(new Date(fatura.dataEmissao), "dd/MM/yyyy", { locale: ptBR })}</p>
+              <p>Vencimento: {format(new Date(fatura.dataVencimento), "dd/MM/yyyy", { locale: ptBR })}</p>
+            </div>
+          </div>
+
+          <div className="border-t border-b py-4 space-y-4">
+            <div>
+              <h2 className="font-semibold mb-2">Dados do Cliente</h2>
+              <p>{cliente.nome}</p>
+              <p>{cliente.tipo === 'juridica' ? 'CNPJ' : 'CPF'}: {cliente.cpfCnpj}</p>
+              <p>{cliente.endereco}</p>
+              <p>{cliente.cidade} - {cliente.estado}, CEP: {cliente.cep}</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="font-semibold">Detalhes do Serviço</h2>
+            <div className="border rounded-lg p-4">
+              <p>Contrato Nº {contrato.numero}</p>
+              <p className="mt-2">Período de Referência: {fatura.referencia}</p>
+              <p>Plano: {contrato.cicloFaturamento}</p>
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <div className="bg-muted p-4 rounded-lg flex justify-between items-center">
+              <span className="text-lg font-semibold">Valor Total</span>
+              <span className="text-2xl font-bold">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(fatura.valor)}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-8 text-sm text-muted-foreground">
+            <p>Para dúvidas ou informações adicionais, entre em contato:</p>
+            <p>Email: financeiro@empresa.com.br</p>
+            <p>Telefone: (11) 1234-5678</p>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default InvoicePreview;

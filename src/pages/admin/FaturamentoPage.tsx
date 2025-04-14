@@ -22,6 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import InvoicePreview from "@/components/admin/InvoicePreview";
 
 const FaturamentoPage: React.FC = () => {
   const [faturas, setFaturas] = useState<Fatura[]>(getFaturas());
@@ -51,6 +52,8 @@ const FaturamentoPage: React.FC = () => {
   
   const [selectedFaturas, setSelectedFaturas] = useState<BatchSelection>({});
   const [selectAll, setSelectAll] = useState(false);
+  
+  const [previewFatura, setPreviewFatura] = useState<Fatura | null>(null);
   
   useEffect(() => {
     if (formClienteId) {
@@ -755,6 +758,7 @@ const FaturamentoPage: React.FC = () => {
                             <Button 
                               variant="ghost" 
                               size="icon"
+                              onClick={() => handleOpenPreview(fatura)}
                               title="Visualizar Fatura"
                             >
                               <FileText size={16} />
@@ -1090,6 +1094,18 @@ const FaturamentoPage: React.FC = () => {
             Excluir Selecionadas ({getSelectedCount()})
           </Button>
         </div>
+      )}
+      
+      {previewFatura && (
+        <InvoicePreview
+          fatura={previewFatura}
+          cliente={getClienteById(previewFatura.clienteId)!}
+          contrato={getContratoById(previewFatura.contratoId)!}
+          open={!!previewFatura}
+          onOpenChange={(open) => {
+            if (!open) setPreviewFatura(null);
+          }}
+        />
       )}
     </AdminLayout>
   );

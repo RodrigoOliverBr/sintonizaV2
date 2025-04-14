@@ -108,7 +108,8 @@ const contratosIniciais: Contrato[] = [
     status: "ativo",
     taxaImplantacao: 500,
     observacoes: "Cliente piloto",
-    cicloFaturamento: "mensal"
+    cicloFaturamento: "mensal",
+    ciclosGerados: 2 // já gerou 2 meses de fatura
   },
   {
     id: "2",
@@ -121,7 +122,8 @@ const contratosIniciais: Contrato[] = [
     status: "ativo",
     taxaImplantacao: 300,
     observacoes: "",
-    cicloFaturamento: "mensal"
+    cicloFaturamento: "mensal",
+    ciclosGerados: 1 // já gerou 1 mês de fatura
   }
 ];
 
@@ -292,7 +294,8 @@ export const deletePlano = (id: string): void => {
 export const getContratos = (): Contrato[] => {
   const contratos = localStorage.getItem(CONTRATOS_KEY);
   if (!contratos) {
-    return [];
+    localStorage.setItem(CONTRATOS_KEY, JSON.stringify(contratosIniciais));
+    return contratosIniciais;
   }
   return JSON.parse(contratos);
 };
@@ -312,13 +315,24 @@ export const gerarNumeroContrato = (): string => {
   return `CONT-${year}-${num.toString().padStart(3, '0')}`;
 };
 
-export const addContrato = (contrato: Omit<Contrato, "id" | "numero">): Contrato => {
+export const addContrato = (contrato: Omit<Contrato, "id" | "numero" | "ciclosGerados">): Contrato => {
   const contratos = getContratos();
   const newContrato: Contrato = {
     ...contrato,
     id: Date.now().toString(),
-    numero: gerarNumeroContrato()
+    numero: gerarNumeroContrato(),
+    ciclosGerados: 0
   };
+  
+  // Se não tiver data de término, calcule a proximaRenovacao para 12 ciclos
+  if (contrato.planoId && getPlanoById(contrato.planoId)?.semVencimento) {
+    newContrato.proximaRenovacao = calcularDataProximaRenovacao(
+      new Date(contrato.dataInicio),
+      contrato.cicloFaturamento,
+      12
+    );
+  }
+  
   localStorage.setItem(CONTRATOS_KEY, JSON.stringify([...contratos, newContrato]));
   return newContrato;
 };
@@ -398,6 +412,75 @@ export const deleteFatura = (id: string): void => {
   localStorage.setItem(FATURAS_KEY, JSON.stringify(filteredFaturas));
 };
 
+// Funções auxiliares para o ciclo de faturamento
+export const calcularDataProximaRenovacao = (
+  dataInicio: Date, 
+  ciclo: CicloFaturamento, 
+  numeroCiclos: number
+): number => {
+  const data = new Date(dataInicio);
+  
+  switch (ciclo) {
+    case 'mensal':
+      data.setMonth(data.getMonth() + numeroCiclos);
+      break;
+    case 'trimestral':
+      data.setMonth(data.getMonth() + (numeroCiclos * 3));
+      break;
+    case 'anual':
+      data.setFullYear(data.getFullYear() + numeroCiclos);
+      break;
+  }
+  
+  return data.getTime();
+};
+
+export const renovarContrato = (contratoId: string, ciclos: number = 12): Contrato | null => {
+  const contrato = getContratoById(contratoId);
+  if (!contrato) return null;
+  
+  const dataAtual = new Date();
+  const proximaRenovacao = calcularDataProximaRenovacao(
+    dataAtual,
+    contrato.cicloFaturamento,
+    ciclos
+  );
+  
+  const contratoAtualizado: Contrato = {
+    ...contrato,
+    proximaRenovacao,
+    ciclosGerados: 0 // Reinicia a contagem de ciclos gerados
+  };
+  
+  updateContrato(contratoAtualizado);
+  return contratoAtualizado;
+};
+
+// Função para verificar contratos próximos de renovação
+export const getContratosParaRenovar = (diasAntecedencia: number = 30): Contrato[] => {
+  const contratos = getContratos();
+  const hoje = new Date();
+  const limiteRenovacao = new Date();
+  limiteRenovacao.setDate(hoje.getDate() + diasAntecedencia);
+  
+  return contratos.filter(contrato => {
+    // Só verifica contratos ativos
+    if (contrato.status !== 'ativo') return false;
+    
+    // Se tiver proximaRenovacao, compara com o limite
+    if (contrato.proximaRenovacao) {
+      return contrato.proximaRenovacao <= limiteRenovacao.getTime();
+    }
+    
+    // Para contratos com data fim, verifica se está próximo de vencer
+    if (!getPlanoById(contrato.planoId)?.semVencimento) {
+      return contrato.dataFim <= limiteRenovacao.getTime();
+    }
+    
+    return false;
+  });
+};
+
 // Dashboard stats
 export const getDashboardStats = () => {
   const clientes = getClientes();
@@ -419,6 +502,9 @@ export const getDashboardStats = () => {
   const valorTotalPago = faturasPagas.reduce((acc, f) => acc + f.valor, 0);
   const valorTotalAtrasado = faturasAtrasadas.reduce((acc, f) => acc + f.valor, 0);
   
+  // Adicionar estatísticas de contratos para renovação
+  const contratosParaRenovar = getContratosParaRenovar();
+  
   return {
     clientesAtivos,
     clientesBloqueados,
@@ -437,7 +523,16 @@ export const getDashboardStats = () => {
     valorTotalPendente,
     valorTotalPago,
     valorTotalAtrasado,
-    valorTotal: valorTotalPendente + valorTotalPago + valorTotalAtrasado
+    valorTotal: valorTotalPendente + valorTotalPago + valorTotalAtrasado,
+    
+    contratosParaRenovar: contratosParaRenovar.length,
+    listaContratosParaRenovar: contratosParaRenovar.map(c => ({
+      id: c.id,
+      numero: c.numero,
+      clienteId: c.clienteId,
+      clienteNome: getClienteById(c.clienteId)?.nome || 'Cliente não encontrado',
+      dataRenovacao: c.proximaRenovacao || c.dataFim
+    }))
   };
 };
 
@@ -483,7 +578,7 @@ export const checkClienteCredentials = (email: string, password: string): Client
     }
   }
   
-  console.log("Autenticação de cliente falhou");
+  console.log("Autentica��ão de cliente falhou");
   return null;
 };
 

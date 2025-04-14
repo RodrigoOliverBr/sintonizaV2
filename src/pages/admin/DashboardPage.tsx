@@ -1,17 +1,36 @@
 
 import React from "react";
 import AdminLayout from "@/components/AdminLayout";
-import { getDashboardStats, getClientes, getContratos, getPlanos } from "@/services/adminService";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getDashboardStats, getClientes, getContratos, getPlanos, renovarContrato } from "@/services/adminService";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
 import { BarChart } from "@/components/ui/BarChart";
-import { Building2, Briefcase, CreditCard, Users, Check, Clock, AlertTriangle } from "lucide-react";
+import { Building2, Briefcase, CreditCard, Users, Check, Clock, AlertTriangle, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const DashboardPage: React.FC = () => {
   const stats = getDashboardStats();
   const planos = getPlanos();
   const clientes = getClientes();
   const contratos = getContratos();
+  
+  // Função para renovar contrato
+  const handleRenovarContrato = (contratoId: string) => {
+    try {
+      const contrato = renovarContrato(contratoId);
+      if (contrato) {
+        toast.success("Contrato renovado com sucesso por mais 12 meses!");
+        // Recarregar página para atualizar as estatísticas
+        window.location.reload();
+      }
+    } catch (error) {
+      toast.error("Erro ao renovar contrato.");
+    }
+  };
   
   // Dados para o gráfico de contratos por plano
   const contratosPorPlano = planos.map(plano => {
@@ -42,6 +61,42 @@ const DashboardPage: React.FC = () => {
   return (
     <AdminLayout title="Dashboard">
       <div className="grid gap-6">
+        {/* Alertas de renovação de contratos */}
+        {stats.contratosParaRenovar > 0 && (
+          <div className="grid gap-4">
+            <h2 className="text-lg font-semibold">Contratos para Renovação</h2>
+            {stats.listaContratosParaRenovar.map((contrato) => (
+              <Alert key={contrato.id} variant="default" className="border-yellow-500 bg-yellow-50">
+                <Calendar className="h-4 w-4 text-yellow-500" />
+                <AlertTitle className="flex items-center justify-between">
+                  <span>Contrato {contrato.numero} - {contrato.clienteNome}</span>
+                </AlertTitle>
+                <AlertDescription className="flex items-center justify-between mt-2">
+                  <span>
+                    Este contrato atingirá o limite de faturas programadas em{' '}
+                    {format(new Date(contrato.dataRenovacao), "dd 'de' MMMM 'de' yyyy", {locale: ptBR})}.
+                  </span>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleRenovarContrato(contrato.id)}
+                    >
+                      Renovar por mais 12 meses
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => window.location.href = `/admin/contratos?edit=${contrato.id}`}
+                    >
+                      Editar Contrato
+                    </Button>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            ))}
+          </div>
+        )}
+      
         {/* Cards de estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>

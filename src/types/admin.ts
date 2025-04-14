@@ -1,3 +1,4 @@
+
 export type ClienteStatus = 'liberado' | 'bloqueado';
 export type TipoPessoa = 'fisica' | 'juridica';
 export type StatusContrato = 'ativo' | 'em-analise' | 'cancelado';
@@ -48,6 +49,8 @@ export interface Contrato {
   taxaImplantacao: number;
   observacoes: string;
   cicloFaturamento: CicloFaturamento;
+  proximaRenovacao?: number; // timestamp para próxima renovação automática
+  ciclosGerados: number; // número de ciclos de faturamento já gerados
 }
 
 export interface Fatura {

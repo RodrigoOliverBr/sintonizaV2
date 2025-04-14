@@ -9,14 +9,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Trash2, Plus, Calendar } from "lucide-react";
+import { Pencil, Trash2, Plus, Calendar, RefreshCw } from "lucide-react";
 import { Contrato, StatusContrato, CicloFaturamento, Cliente, Plano } from "@/types/admin";
-import { getContratos, addContrato, updateContrato, deleteContrato, getClientes, getPlanos, getClienteById, getPlanoById } from "@/services/adminService";
+import { 
+  getContratos, addContrato, updateContrato, deleteContrato, 
+  getClientes, getPlanos, getClienteById, getPlanoById,
+  renovarContrato, calcularDataProximaRenovacao
+} from "@/services/adminService";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useSearchParams } from "react-router-dom";
 
 const ContratosPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
+  
   const [contratos, setContratos] = useState<Contrato[]>(getContratos());
   const [clientes, setClientes] = useState<Cliente[]>(getClientes());
   const [planos, setPlanos] = useState<Plano[]>(getPlanos());
@@ -35,6 +43,15 @@ const ContratosPage: React.FC = () => {
   const [formTaxaImplantacao, setFormTaxaImplantacao] = useState(0);
   const [formObservacoes, setFormObservacoes] = useState("");
   const [formCicloFaturamento, setFormCicloFaturamento] = useState<CicloFaturamento>("mensal");
+  
+  useEffect(() => {
+    if (editId) {
+      const contrato = contratos.find(c => c.id === editId);
+      if (contrato) {
+        handleOpenEditModal(contrato);
+      }
+    }
+  }, [editId]);
   
   useEffect(() => {
     if (formPlanoId) {
@@ -96,10 +113,34 @@ const ContratosPage: React.FC = () => {
     setOpenDeleteModal(true);
   };
   
+  const handleRenovarContrato = (contrato: Contrato) => {
+    try {
+      const contratoRenovado = renovarContrato(contrato.id);
+      if (contratoRenovado) {
+        refreshContratos();
+        toast.success("Contrato renovado com sucesso por mais 12 meses!");
+      }
+    } catch (error) {
+      toast.error("Erro ao renovar contrato.");
+    }
+  };
+  
   const handleAddContrato = () => {
     try {
       const dataInicio = new Date(formDataInicio).getTime();
-      const dataFim = new Date(formDataFim).getTime();
+      
+      const planoSelecionado = getPlanoById(formPlanoId);
+      let dataFim: number;
+      
+      if (planoSelecionado?.semVencimento) {
+        dataFim = calcularDataProximaRenovacao(
+          new Date(dataInicio),
+          formCicloFaturamento,
+          12
+        );
+      } else {
+        dataFim = new Date(formDataFim).getTime();
+      }
       
       addContrato({
         clienteId: formClienteId,
@@ -126,9 +167,21 @@ const ContratosPage: React.FC = () => {
     
     try {
       const dataInicio = new Date(formDataInicio).getTime();
-      const dataFim = new Date(formDataFim).getTime();
       
-      updateContrato({
+      const planoSelecionado = getPlanoById(formPlanoId);
+      let dataFim: number;
+      
+      if (planoSelecionado?.semVencimento) {
+        dataFim = calcularDataProximaRenovacao(
+          new Date(dataInicio),
+          formCicloFaturamento,
+          12
+        );
+      } else {
+        dataFim = new Date(formDataFim).getTime();
+      }
+      
+      const contratoAtualizado: Contrato = {
         ...currentContrato,
         clienteId: formClienteId,
         planoId: formPlanoId,
@@ -139,7 +192,15 @@ const ContratosPage: React.FC = () => {
         taxaImplantacao: formTaxaImplantacao,
         observacoes: formObservacoes,
         cicloFaturamento: formCicloFaturamento
-      });
+      };
+      
+      if (planoSelecionado?.semVencimento) {
+        contratoAtualizado.proximaRenovacao = dataFim;
+      } else {
+        delete contratoAtualizado.proximaRenovacao;
+      }
+      
+      updateContrato(contratoAtualizado);
       refreshContratos();
       setOpenEditModal(false);
       clearForm();
@@ -207,6 +268,13 @@ const ContratosPage: React.FC = () => {
                   <DialogTitle>Adicionar Novo Contrato</DialogTitle>
                   <DialogDescription>
                     Preencha as informações do novo contrato.
+                    {formPlanoId && getPlanoById(formPlanoId)?.semVencimento && (
+                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-sm">
+                        <strong>Nota:</strong> Este contrato não possui data de término definida. 
+                        O sistema irá gerar faturas para 12 ciclos de cobrança, conforme o plano selecionado.
+                        Após esse período, será necessária uma renovação.
+                      </div>
+                    )}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -379,55 +447,87 @@ const ContratosPage: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredContratos.map((contrato) => (
-                  <TableRow key={contrato.id}>
-                    <TableCell className="font-medium">{contrato.numero}</TableCell>
-                    <TableCell>{clienteNome(contrato.clienteId)}</TableCell>
-                    <TableCell>{planoNome(contrato.planoId)}</TableCell>
-                    <TableCell>
-                      {format(new Date(contrato.dataInicio), "dd/MM/yyyy", {locale: ptBR})} a {format(new Date(contrato.dataFim), "dd/MM/yyyy", {locale: ptBR})}
-                    </TableCell>
-                    <TableCell>
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contrato.valorMensal)}
-                    </TableCell>
-                    <TableCell>
-                      {contrato.cicloFaturamento === "mensal" ? "Mensal" : 
-                       contrato.cicloFaturamento === "trimestral" ? "Trimestral" : "Anual"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={
-                          contrato.status === "ativo" ? "default" : 
-                          contrato.status === "em-analise" ? "outline" : "secondary"
+                filteredContratos.map((contrato) => {
+                  const plano = getPlanoById(contrato.planoId);
+                  const isRenovavel = plano?.semVencimento && contrato.status === "ativo";
+                  const isProximoRenovacao = contrato.proximaRenovacao && 
+                    (contrato.proximaRenovacao - Date.now()) < 30 * 24 * 60 * 60 * 1000; // 30 dias
+                  
+                  return (
+                    <TableRow key={contrato.id} className={isProximoRenovacao ? "bg-yellow-50" : ""}>
+                      <TableCell className="font-medium">{contrato.numero}</TableCell>
+                      <TableCell>{clienteNome(contrato.clienteId)}</TableCell>
+                      <TableCell>{planoNome(contrato.planoId)}</TableCell>
+                      <TableCell>
+                        {format(new Date(contrato.dataInicio), "dd/MM/yyyy", {locale: ptBR})} a{' '}
+                        {plano?.semVencimento 
+                          ? <span className="text-amber-600 font-medium">
+                              {contrato.proximaRenovacao 
+                                ? format(new Date(contrato.proximaRenovacao), "dd/MM/yyyy", {locale: ptBR}) + " *" 
+                                : "Sem término"}
+                            </span>
+                          : format(new Date(contrato.dataFim), "dd/MM/yyyy", {locale: ptBR})
                         }
-                      >
-                        {contrato.status === "ativo" ? "Ativo" : 
-                         contrato.status === "em-analise" ? "Em Análise" : "Cancelado"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleOpenEditModal(contrato)}
+                      </TableCell>
+                      <TableCell>
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contrato.valorMensal)}
+                      </TableCell>
+                      <TableCell>
+                        {contrato.cicloFaturamento === "mensal" ? "Mensal" : 
+                        contrato.cicloFaturamento === "trimestral" ? "Trimestral" : "Anual"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={
+                            contrato.status === "ativo" ? "default" : 
+                            contrato.status === "em-analise" ? "outline" : "secondary"
+                          }
                         >
-                          <Pencil size={16} />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleOpenDeleteModal(contrato)}
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                          {contrato.status === "ativo" ? "Ativo" : 
+                          contrato.status === "em-analise" ? "Em Análise" : "Cancelado"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          {isRenovavel && (
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              title="Renovar contrato por mais 12 meses"
+                              onClick={() => handleRenovarContrato(contrato)}
+                              className={isProximoRenovacao ? "border-amber-500 text-amber-600 hover:text-amber-700" : ""}
+                            >
+                              <RefreshCw size={16} />
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleOpenEditModal(contrato)}
+                          >
+                            <Pencil size={16} />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleOpenDeleteModal(contrato)}
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
+          
+          {filteredContratos.some(c => getPlanoById(c.planoId)?.semVencimento) && (
+            <div className="mt-4 text-sm text-muted-foreground">
+              * Contratos sem data de término definida têm um ciclo de faturamento de 12 meses, após o qual precisam ser renovados.
+            </div>
+          )}
         </CardContent>
       </Card>
       
@@ -437,6 +537,13 @@ const ContratosPage: React.FC = () => {
             <DialogTitle>Editar Contrato</DialogTitle>
             <DialogDescription>
               Atualize as informações do contrato.
+              {formPlanoId && getPlanoById(formPlanoId)?.semVencimento && (
+                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-sm">
+                  <strong>Nota:</strong> Este contrato não possui data de término definida. 
+                  O sistema irá gerar faturas para 12 ciclos de cobrança, conforme o plano selecionado.
+                  Após esse período, será necessária uma renovação.
+                </div>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

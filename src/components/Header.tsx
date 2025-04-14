@@ -8,28 +8,8 @@ interface HeaderProps {
   title?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ title }) => {
-  const location = useLocation();
+const Header: React.FC<HeaderProps> = () => {
   const navigate = useNavigate();
-  
-  const getPageTitle = () => {
-    if (title) return title;
-    
-    switch (location.pathname) {
-      case "/":
-        return "Formulário ISTAS21-BR";
-      case "/como-preencher":
-        return "Como Preencher o Formulário";
-      case "/como-avaliar":
-        return "Como Avaliar o Resultado";
-      case "/sobre":
-        return "Sobre o Formulário ISTAS21-BR";
-      case "/mitigacoes":
-        return "Guia de Mitigações";
-      default:
-        return "Formulário ISTAS21-BR";
-    }
-  };
   
   const handleLogout = () => {
     localStorage.removeItem("sintonia:userType");
@@ -47,9 +27,6 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
               alt="Sintonia Logo"
               className="h-8 mr-2 md:hidden"
             />
-            <h1 className="text-2xl font-bold text-esocial-darkGray">
-              {getPageTitle()}
-            </h1>
           </div>
           <div className="flex items-center gap-4">
             <Button
@@ -76,3 +53,4 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
 };
 
 export default Header;
+

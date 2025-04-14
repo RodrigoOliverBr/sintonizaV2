@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Pencil, Trash2, Plus, Calendar, FileText } from "lucide-react";
-import { Fatura, StatusFatura, Cliente, Contrato } from "@/types/admin";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Fatura, StatusFatura, Cliente, Contrato, BatchSelection } from "@/types/admin";
 import { getFaturas, addFatura, updateFatura, deleteFatura, getClientes, getContratos, getClienteById, getContratoById } from "@/services/adminService";
 import { toast } from "sonner";
 import { format, addMonths } from "date-fns";
@@ -24,6 +25,7 @@ const FaturamentoPage: React.FC = () => {
   const [openNewModal, setOpenNewModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [openBatchDeleteModal, setOpenBatchDeleteModal] = useState(false);
   const [currentFatura, setCurrentFatura] = useState<Fatura | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<StatusFatura | "todos">("todos");
@@ -42,6 +44,10 @@ const FaturamentoPage: React.FC = () => {
   const [contratosCliente, setContratosCliente] = useState<Contrato[]>([]);
   
   const [mesFiltro, setMesFiltro] = useState<string>("todos");
+  
+  // Estado para seleção em lote
+  const [selectedFaturas, setSelectedFaturas] = useState<BatchSelection>({});
+  const [selectAll, setSelectAll] = useState(false);
   
   useEffect(() => {
     if (formClienteId) {
@@ -82,6 +88,20 @@ const FaturamentoPage: React.FC = () => {
       }
     }
   }, [formContratoId]);
+
+  // Efeito para lidar com a seleção de todos os checkboxes
+  useEffect(() => {
+    if (selectAll) {
+      const newSelected: BatchSelection = {};
+      filteredFaturas.forEach(fatura => {
+        newSelected[fatura.id] = true;
+      });
+      setSelectedFaturas(newSelected);
+    } else {
+      // Não limpar todas as seleções se o usuário desmarcar selectAll manualmente
+      // apenas quando ele clicar no checkbox principal
+    }
+  }, [selectAll]);
   
   const refreshFaturas = () => {
     setFaturas(getFaturas());
@@ -99,7 +119,7 @@ const FaturamentoPage: React.FC = () => {
   
   const formatToDateInput = (timestamp: number): string => {
     const date = new Date(timestamp);
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return format(date, "yyyy-MM-dd");
   };
   
   const handleOpenEditModal = (fatura: Fatura) => {
@@ -130,7 +150,8 @@ const FaturamentoPage: React.FC = () => {
         dataEmissao,
         dataVencimento,
         valor: formValor,
-        status: formStatus
+        status: formStatus,
+        referencia: formReferencia
       });
       refreshFaturas();
       setOpenNewModal(false);
@@ -180,6 +201,56 @@ const FaturamentoPage: React.FC = () => {
     }
   };
   
+  // Função para exclusão em lote
+  const handleBatchDelete = () => {
+    try {
+      let count = 0;
+      Object.keys(selectedFaturas).forEach(id => {
+        if (selectedFaturas[id]) {
+          deleteFatura(id);
+          count++;
+        }
+      });
+      
+      refreshFaturas();
+      setSelectedFaturas({});
+      setSelectAll(false);
+      setOpenBatchDeleteModal(false);
+      
+      if (count > 0) {
+        toast.success(`${count} ${count === 1 ? 'fatura excluída' : 'faturas excluídas'} com sucesso!`);
+      }
+    } catch (error) {
+      toast.error("Erro ao excluir faturas.");
+    }
+  };
+  
+  const handleSelectFatura = (id: string, checked: boolean) => {
+    setSelectedFaturas(prev => ({
+      ...prev,
+      [id]: checked
+    }));
+    
+    // Verificar se todos os itens estão selecionados
+    const allSelected = filteredFaturas.every(
+      fatura => fatura.id === id ? checked : (selectedFaturas[fatura.id] || false)
+    );
+    
+    setSelectAll(allSelected);
+  };
+  
+  const handleSelectAll = (checked: boolean) => {
+    setSelectAll(checked);
+    
+    if (!checked) {
+      setSelectedFaturas({});
+    }
+  };
+  
+  const getSelectedCount = () => {
+    return Object.values(selectedFaturas).filter(Boolean).length;
+  };
+  
   const clienteNome = (id: string): string => {
     const cliente = getClienteById(id);
     return cliente ? cliente.nome : "Cliente não encontrado";
@@ -191,6 +262,7 @@ const FaturamentoPage: React.FC = () => {
   };
   
   const handleFiltrarFaturas = () => {
+    // Apenas refresh, pois a filtragem ocorre na função filteredFaturas
     refreshFaturas();
   };
   
@@ -265,133 +337,145 @@ const FaturamentoPage: React.FC = () => {
                     Cadastre e gerencie as faturas dos clientes
                   </CardDescription>
                 </div>
-                <Dialog open={openNewModal} onOpenChange={setOpenNewModal}>
-                  <DialogTrigger asChild>
-                    <Button className="flex items-center gap-2">
-                      <Plus size={16} />
-                      Nova Fatura
+                <div className="flex gap-2">
+                  {getSelectedCount() > 0 && (
+                    <Button 
+                      variant="destructive" 
+                      className="flex items-center gap-2"
+                      onClick={() => setOpenBatchDeleteModal(true)}
+                    >
+                      <Trash2 size={16} />
+                      Excluir Selecionadas ({getSelectedCount()})
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                      <DialogTitle>Adicionar Nova Fatura</DialogTitle>
-                      <DialogDescription>
-                        Preencha as informações da nova fatura.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="clienteId">Cliente</Label>
-                        <Select 
-                          value={formClienteId} 
-                          onValueChange={setFormClienteId}
-                        >
-                          <SelectTrigger id="clienteId">
-                            <SelectValue placeholder="Selecione o cliente" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {clientes.filter(c => c.situacao === 'liberado').map(cliente => (
-                              <SelectItem key={cliente.id} value={cliente.id}>
-                                {cliente.nome}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="contratoId">Contrato</Label>
-                        <Select 
-                          value={formContratoId} 
-                          onValueChange={setFormContratoId}
-                          disabled={contratosCliente.length === 0}
-                        >
-                          <SelectTrigger id="contratoId">
-                            <SelectValue placeholder={
-                              contratosCliente.length === 0 
-                                ? "Selecione um cliente primeiro" 
-                                : "Selecione o contrato"
-                            } />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {contratosCliente.map(contrato => (
-                              <SelectItem key={contrato.id} value={contrato.id}>
-                                {contrato.numero} - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contrato.valorMensal)}/mês
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  )}
+                  <Dialog open={openNewModal} onOpenChange={setOpenNewModal}>
+                    <DialogTrigger asChild>
+                      <Button className="flex items-center gap-2">
+                        <Plus size={16} />
+                        Nova Fatura
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[600px]">
+                      <DialogHeader>
+                        <DialogTitle>Adicionar Nova Fatura</DialogTitle>
+                        <DialogDescription>
+                          Preencha as informações da nova fatura.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
                         <div className="space-y-2">
-                          <Label htmlFor="dataEmissao">Data de Emissão</Label>
-                          <div className="flex items-center">
-                            <Calendar className="mr-2 h-4 w-4 opacity-50" />
-                            <Input 
-                              id="dataEmissao" 
-                              type="date"
-                              value={formDataEmissao} 
-                              onChange={(e) => setFormDataEmissao(e.target.value)} 
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="dataVencimento">Data de Vencimento</Label>
-                          <div className="flex items-center">
-                            <Calendar className="mr-2 h-4 w-4 opacity-50" />
-                            <Input 
-                              id="dataVencimento" 
-                              type="date"
-                              value={formDataVencimento} 
-                              onChange={(e) => setFormDataVencimento(e.target.value)} 
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="valor">Valor (R$)</Label>
-                          <Input 
-                            id="valor" 
-                            type="number" 
-                            min={0}
-                            step={0.01}
-                            value={formValor} 
-                            onChange={(e) => setFormValor(Number(e.target.value))} 
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="status">Status</Label>
+                          <Label htmlFor="clienteId">Cliente</Label>
                           <Select 
-                            value={formStatus} 
-                            onValueChange={(value: StatusFatura) => setFormStatus(value)}
+                            value={formClienteId} 
+                            onValueChange={setFormClienteId}
                           >
-                            <SelectTrigger id="status">
-                              <SelectValue placeholder="Selecione o status" />
+                            <SelectTrigger id="clienteId">
+                              <SelectValue placeholder="Selecione o cliente" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="pendente">Pendente</SelectItem>
-                              <SelectItem value="pago">Pago</SelectItem>
-                              <SelectItem value="atrasado">Atrasado</SelectItem>
+                              {clientes.filter(c => c.situacao === 'liberado').map(cliente => (
+                                <SelectItem key={cliente.id} value={cliente.id}>
+                                  {cliente.nome}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="contratoId">Contrato</Label>
+                          <Select 
+                            value={formContratoId} 
+                            onValueChange={setFormContratoId}
+                            disabled={contratosCliente.length === 0}
+                          >
+                            <SelectTrigger id="contratoId">
+                              <SelectValue placeholder={
+                                contratosCliente.length === 0 
+                                  ? "Selecione um cliente primeiro" 
+                                  : "Selecione o contrato"
+                              } />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {contratosCliente.map(contrato => (
+                                <SelectItem key={contrato.id} value={contrato.id}>
+                                  {contrato.numero} - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contrato.valorMensal)}/mês
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="dataEmissao">Data de Emissão</Label>
+                            <div className="flex items-center">
+                              <Calendar className="mr-2 h-4 w-4 opacity-50" />
+                              <Input 
+                                id="dataEmissao" 
+                                type="date"
+                                value={formDataEmissao} 
+                                onChange={(e) => setFormDataEmissao(e.target.value)} 
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="dataVencimento">Data de Vencimento</Label>
+                            <div className="flex items-center">
+                              <Calendar className="mr-2 h-4 w-4 opacity-50" />
+                              <Input 
+                                id="dataVencimento" 
+                                type="date"
+                                value={formDataVencimento} 
+                                onChange={(e) => setFormDataVencimento(e.target.value)} 
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="valor">Valor (R$)</Label>
+                            <Input 
+                              id="valor" 
+                              type="number" 
+                              min={0}
+                              step={0.01}
+                              value={formValor} 
+                              onChange={(e) => setFormValor(Number(e.target.value))} 
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="status">Status</Label>
+                            <Select 
+                              value={formStatus} 
+                              onValueChange={(value: StatusFatura) => setFormStatus(value)}
+                            >
+                              <SelectTrigger id="status">
+                                <SelectValue placeholder="Selecione o status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pendente">Pendente</SelectItem>
+                                <SelectItem value="pago">Pago</SelectItem>
+                                <SelectItem value="atrasado">Atrasado</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="referencia">Referência</Label>
+                          <Input 
+                            id="referencia" 
+                            value={formReferencia} 
+                            onChange={(e) => setFormReferencia(e.target.value)}
+                            placeholder="Ex: 05/2025" 
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="referencia">Referência</Label>
-                        <Input 
-                          id="referencia" 
-                          value={formReferencia} 
-                          onChange={(e) => setFormReferencia(e.target.value)}
-                          placeholder="Ex: 05/2025" 
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setOpenNewModal(false)}>Cancelar</Button>
-                      <Button onClick={handleAddFatura}>Salvar</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setOpenNewModal(false)}>Cancelar</Button>
+                        <Button onClick={handleAddFatura}>Salvar</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
               <div className="pt-4 space-y-4">
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -401,8 +485,7 @@ const FaturamentoPage: React.FC = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="max-w-xl"
                   />
-                  <div className="flex gap-2">
-                    {/* Add month filter */}
+                  <div className="flex flex-wrap gap-2">
                     <Select 
                       value={mesFiltro} 
                       onValueChange={(value: string) => setMesFiltro(value)}
@@ -524,6 +607,17 @@ const FaturamentoPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox 
+                        checked={selectAll} 
+                        onCheckedChange={(checked) => {
+                          if (typeof checked === 'boolean') {
+                            handleSelectAll(checked);
+                          }
+                        }}
+                        aria-label="Selecionar todas as faturas"
+                      />
+                    </TableHead>
                     <TableHead>Número</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Contrato</TableHead>
@@ -538,13 +632,24 @@ const FaturamentoPage: React.FC = () => {
                 <TableBody>
                   {filteredFaturas.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-4 text-muted-foreground">
+                      <TableCell colSpan={10} className="text-center py-4 text-muted-foreground">
                         Nenhuma fatura encontrada.
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredFaturas.map((fatura) => (
                       <TableRow key={fatura.id}>
+                        <TableCell>
+                          <Checkbox 
+                            checked={!!selectedFaturas[fatura.id]} 
+                            onCheckedChange={(checked) => {
+                              if (typeof checked === 'boolean') {
+                                handleSelectFatura(fatura.id, checked);
+                              }
+                            }}
+                            aria-label={`Selecionar fatura ${fatura.numero}`}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">{fatura.numero}</TableCell>
                         <TableCell>{clienteNome(fatura.clienteId)}</TableCell>
                         <TableCell>{contratoNumero(fatura.contratoId)}</TableCell>
@@ -613,7 +718,6 @@ const FaturamentoPage: React.FC = () => {
                 Acompanhamento financeiro mensal
               </CardDescription>
               <div className="flex gap-2 mt-4">
-                {/* Add month filter here too */}
                 <Select 
                   value={mesFiltro} 
                   onValueChange={(value: string) => setMesFiltro(value)}
@@ -862,6 +966,25 @@ const FaturamentoPage: React.FC = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenDeleteModal(false)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDeleteFatura}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Modal de Confirmação para Exclusão em Lote */}
+      <Dialog open={openBatchDeleteModal} onOpenChange={setOpenBatchDeleteModal}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Excluir Faturas Selecionadas</DialogTitle>
+            <DialogDescription>
+              Esta ação não pode ser desfeita. Deseja realmente excluir {getSelectedCount()} {getSelectedCount() === 1 ? 'fatura selecionada' : 'faturas selecionadas'}?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-red-500 font-medium">Atenção: Esta ação excluirá permanentemente as faturas selecionadas.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenBatchDeleteModal(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleBatchDelete}>Excluir {getSelectedCount()} {getSelectedCount() === 1 ? 'Fatura' : 'Faturas'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -64,3 +64,8 @@ export interface Fatura {
   status: StatusFatura;
   referencia: string; // ex: "05/2025"
 }
+
+// Interface para estado de seleção em lote
+export interface BatchSelection {
+  [key: string]: boolean;
+}

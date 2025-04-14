@@ -56,8 +56,19 @@ const planosIniciais: Plano[] = [
     nome: "Básico",
     descricao: "Plano básico para pequenas empresas",
     valorMensal: 199.90,
-    duracao: 12,
-    recursos: ["Até 50 empregados", "Relatórios básicos", "Suporte por email"],
+    valorImplantacao: 100,
+    limiteEmpresas: 5,
+    empresasIlimitadas: false,
+    limiteEmpregados: 50,
+    empregadosIlimitados: false,
+    dataValidade: Date.now() + 31536000000,
+    semVencimento: false,
+    recursos: {
+      relatoriosAvancados: false,
+      suportePrioritario: false,
+      integracaoPersonalizada: false,
+      treinamentoIncluido: false,
+    },
     ativo: true
   },
   {
@@ -65,8 +76,19 @@ const planosIniciais: Plano[] = [
     nome: "Profissional",
     descricao: "Plano completo para médias empresas",
     valorMensal: 399.90,
-    duracao: 12,
-    recursos: ["Até 200 empregados", "Relatórios avançados", "Suporte prioritário", "Treinamento incluído"],
+    valorImplantacao: 200,
+    limiteEmpresas: 10,
+    empresasIlimitadas: false,
+    limiteEmpregados: 200,
+    empregadosIlimitados: false,
+    dataValidade: Date.now() + 31536000000,
+    semVencimento: false,
+    recursos: {
+      relatoriosAvancados: true,
+      suportePrioritario: true,
+      integracaoPersonalizada: false,
+      treinamentoIncluido: false,
+    },
     ativo: true
   },
   {
@@ -74,8 +96,19 @@ const planosIniciais: Plano[] = [
     nome: "Enterprise",
     descricao: "Solução completa para grandes empresas",
     valorMensal: 999.90,
-    duracao: 12,
-    recursos: ["Empregados ilimitados", "Todos os relatórios", "Suporte 24/7", "Treinamento premium", "Integração personalizada"],
+    valorImplantacao: 300,
+    limiteEmpresas: 0,
+    empresasIlimitadas: true,
+    limiteEmpregados: 0,
+    empregadosIlimitados: true,
+    dataValidade: null,
+    semVencimento: true,
+    recursos: {
+      relatoriosAvancados: true,
+      suportePrioritario: true,
+      integracaoPersonalizada: true,
+      treinamentoIncluido: true,
+    },
     ativo: true
   }
 ];
@@ -149,24 +182,45 @@ const faturasIniciais: Fatura[] = [
 
 // Forçar a inicialização dos dados a cada carregamento do serviço
 const inicializarDados = () => {
-  // Limpar dados existentes para garantir a consistência
-  localStorage.removeItem(CLIENTES_KEY);
-  localStorage.removeItem(PLANOS_KEY);
-  localStorage.removeItem(CONTRATOS_KEY);
-  localStorage.removeItem(FATURAS_KEY);
+  // Verificar se já existe algum dado
+  let deveLimpar = false;
   
-  // Inicializar com dados padrão
-  localStorage.setItem(CLIENTES_KEY, JSON.stringify(clientesIniciais));
-  localStorage.setItem(PLANOS_KEY, JSON.stringify(planosIniciais));
-  localStorage.setItem(CONTRATOS_KEY, JSON.stringify(contratosIniciais));
-  localStorage.setItem(FATURAS_KEY, JSON.stringify(faturasIniciais));
-  
-  if (!localStorage.getItem(ADMIN_USER_KEY)) {
-    localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(defaultAdminUser));
+  // Verificar se a estrutura de planos está atualizada (novos campos)
+  const planosAtuais = localStorage.getItem(PLANOS_KEY);
+  if (planosAtuais) {
+    try {
+      const planos = JSON.parse(planosAtuais);
+      // Verificar se algum plano tem a nova estrutura
+      if (planos.length > 0 && !('valorImplantacao' in planos[0])) {
+        console.log("Estrutura de planos desatualizada, limpando dados...");
+        deveLimpar = true;
+      }
+    } catch (e) {
+      deveLimpar = true;
+    }
   }
   
-  console.log("Dados inicializados com sucesso");
-  console.log("Clientes:", JSON.stringify(clientesIniciais));
+  if (deveLimpar) {
+    // Limpar dados existentes para garantir a consistência
+    localStorage.removeItem(CLIENTES_KEY);
+    localStorage.removeItem(PLANOS_KEY);
+    localStorage.removeItem(CONTRATOS_KEY);
+    localStorage.removeItem(FATURAS_KEY);
+  }
+  
+  // Inicializar clientes
+  if (!localStorage.getItem(CLIENTES_KEY)) {
+    localStorage.setItem(CLIENTES_KEY, JSON.stringify(clientesIniciais));
+    console.log("Clientes inicializados");
+  }
+  
+  // Inicializar admin
+  if (!localStorage.getItem(ADMIN_USER_KEY)) {
+    localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(defaultAdminUser));
+    console.log("Admin inicializado");
+  }
+  
+  console.log("Verificação de dados concluída");
 };
 
 // Inicializar dados ao carregar o serviço

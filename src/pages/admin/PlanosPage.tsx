@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,10 +9,18 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Trash2, Plus, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Pencil, Trash2, Plus, X, Check, CalendarIcon } from "lucide-react";
 import { Plano } from "@/types/admin";
 import { getPlanos, addPlano, updatePlano, deletePlano } from "@/services/adminService";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 const PlanosPage: React.FC = () => {
   const [planos, setPlanos] = useState<Plano[]>(getPlanos());
@@ -26,10 +34,95 @@ const PlanosPage: React.FC = () => {
   const [formNome, setFormNome] = useState("");
   const [formDescricao, setFormDescricao] = useState("");
   const [formValorMensal, setFormValorMensal] = useState(0);
-  const [formDuracao, setFormDuracao] = useState(12);
-  const [formRecursos, setFormRecursos] = useState<string[]>([]);
+  const [formValorImplantacao, setFormValorImplantacao] = useState(0);
+  const [formLimiteEmpresas, setFormLimiteEmpresas] = useState(1);
+  const [formEmpresasIlimitadas, setFormEmpresasIlimitadas] = useState(false);
+  const [formLimiteEmpregados, setFormLimiteEmpregados] = useState(10);
+  const [formEmpregadosIlimitados, setFormEmpregadosIlimitados] = useState(false);
+  const [formDataValidade, setFormDataValidade] = useState<Date | null>(null);
+  const [formSemVencimento, setFormSemVencimento] = useState(false);
+  const [formRelatoriosAvancados, setFormRelatoriosAvancados] = useState(false);
+  const [formSuportePrioritario, setFormSuportePrioritario] = useState(false);
+  const [formIntegracaoPersonalizada, setFormIntegracaoPersonalizada] = useState(false);
+  const [formTreinamentoIncluido, setFormTreinamentoIncluido] = useState(false);
   const [formAtivo, setFormAtivo] = useState(true);
-  const [novoRecurso, setNovoRecurso] = useState("");
+  
+  useEffect(() => {
+    // Inicializar planos padrão se não existirem
+    const planosExistentes = getPlanos();
+    if (planosExistentes.length === 0) {
+      // Adicionar planos iniciais
+      criarPlanosIniciais();
+    }
+    refreshPlanos();
+  }, []);
+  
+  const criarPlanosIniciais = () => {
+    // Plano eSocial Brasil (Corporativo)
+    addPlano({
+      nome: "eSocial Brasil (Corporativo)",
+      descricao: "Plano exclusivo para clientes ativos da plataforma eSocial Brasil. Todos os recursos liberados por um valor simbólico.",
+      valorMensal: 99.90,
+      valorImplantacao: 599.00,
+      limiteEmpresas: 1,
+      empresasIlimitadas: true,
+      limiteEmpregados: 1,
+      empregadosIlimitados: true,
+      dataValidade: null,
+      semVencimento: true,
+      recursos: {
+        relatoriosAvancados: true,
+        suportePrioritario: true,
+        integracaoPersonalizada: true,
+        treinamentoIncluido: true
+      },
+      ativo: true
+    });
+    
+    // Plano Profissional (Clientes Externos)
+    addPlano({
+      nome: "Profissional (Clientes Externos)",
+      descricao: "Plano completo com diagnóstico psicossocial e relatórios de conformidade para pequenas e médias empresas.",
+      valorMensal: 199.90,
+      valorImplantacao: 1599.00,
+      limiteEmpresas: 1,
+      empresasIlimitadas: false,
+      limiteEmpregados: 100,
+      empregadosIlimitados: false,
+      dataValidade: new Date(new Date().setMonth(new Date().getMonth() + 12)).getTime(),
+      semVencimento: false,
+      recursos: {
+        relatoriosAvancados: true,
+        suportePrioritario: false,
+        integracaoPersonalizada: false,
+        treinamentoIncluido: false
+      },
+      ativo: true
+    });
+    
+    // Plano Gratuito
+    addPlano({
+      nome: "Plano Gratuito",
+      descricao: "Versão limitada para testes e experimentações.",
+      valorMensal: 0,
+      valorImplantacao: 0,
+      limiteEmpresas: 1,
+      empresasIlimitadas: false,
+      limiteEmpregados: 10,
+      empregadosIlimitados: false,
+      dataValidade: new Date(new Date().setDate(new Date().getDate() + 30)).getTime(),
+      semVencimento: false,
+      recursos: {
+        relatoriosAvancados: false,
+        suportePrioritario: false,
+        integracaoPersonalizada: false,
+        treinamentoIncluido: false
+      },
+      ativo: true
+    });
+    
+    toast.success("Planos iniciais criados com sucesso!");
+  };
   
   const refreshPlanos = () => {
     setPlanos(getPlanos());
@@ -39,10 +132,18 @@ const PlanosPage: React.FC = () => {
     setFormNome("");
     setFormDescricao("");
     setFormValorMensal(0);
-    setFormDuracao(12);
-    setFormRecursos([]);
+    setFormValorImplantacao(0);
+    setFormLimiteEmpresas(1);
+    setFormEmpresasIlimitadas(false);
+    setFormLimiteEmpregados(10);
+    setFormEmpregadosIlimitados(false);
+    setFormDataValidade(null);
+    setFormSemVencimento(false);
+    setFormRelatoriosAvancados(false);
+    setFormSuportePrioritario(false);
+    setFormIntegracaoPersonalizada(false);
+    setFormTreinamentoIncluido(false);
     setFormAtivo(true);
-    setNovoRecurso("");
   };
   
   const handleOpenEditModal = (plano: Plano) => {
@@ -50,8 +151,17 @@ const PlanosPage: React.FC = () => {
     setFormNome(plano.nome);
     setFormDescricao(plano.descricao);
     setFormValorMensal(plano.valorMensal);
-    setFormDuracao(plano.duracao);
-    setFormRecursos([...plano.recursos]);
+    setFormValorImplantacao(plano.valorImplantacao);
+    setFormLimiteEmpresas(plano.limiteEmpresas);
+    setFormEmpresasIlimitadas(plano.empresasIlimitadas);
+    setFormLimiteEmpregados(plano.limiteEmpregados);
+    setFormEmpregadosIlimitados(plano.empregadosIlimitados);
+    setFormDataValidade(plano.dataValidade ? new Date(plano.dataValidade) : null);
+    setFormSemVencimento(plano.semVencimento);
+    setFormRelatoriosAvancados(plano.recursos.relatoriosAvancados);
+    setFormSuportePrioritario(plano.recursos.suportePrioritario);
+    setFormIntegracaoPersonalizada(plano.recursos.integracaoPersonalizada);
+    setFormTreinamentoIncluido(plano.recursos.treinamentoIncluido);
     setFormAtivo(plano.ativo);
     setOpenEditModal(true);
   };
@@ -67,8 +177,19 @@ const PlanosPage: React.FC = () => {
         nome: formNome,
         descricao: formDescricao,
         valorMensal: formValorMensal,
-        duracao: formDuracao,
-        recursos: formRecursos,
+        valorImplantacao: formValorImplantacao,
+        limiteEmpresas: formLimiteEmpresas,
+        empresasIlimitadas: formEmpresasIlimitadas,
+        limiteEmpregados: formLimiteEmpregados,
+        empregadosIlimitados: formEmpregadosIlimitados,
+        dataValidade: formSemVencimento ? null : (formDataValidade ? formDataValidade.getTime() : null),
+        semVencimento: formSemVencimento,
+        recursos: {
+          relatoriosAvancados: formRelatoriosAvancados,
+          suportePrioritario: formSuportePrioritario,
+          integracaoPersonalizada: formIntegracaoPersonalizada,
+          treinamentoIncluido: formTreinamentoIncluido
+        },
         ativo: formAtivo
       });
       refreshPlanos();
@@ -89,8 +210,19 @@ const PlanosPage: React.FC = () => {
         nome: formNome,
         descricao: formDescricao,
         valorMensal: formValorMensal,
-        duracao: formDuracao,
-        recursos: formRecursos,
+        valorImplantacao: formValorImplantacao,
+        limiteEmpresas: formLimiteEmpresas,
+        empresasIlimitadas: formEmpresasIlimitadas,
+        limiteEmpregados: formLimiteEmpregados,
+        empregadosIlimitados: formEmpregadosIlimitados,
+        dataValidade: formSemVencimento ? null : (formDataValidade ? formDataValidade.getTime() : null),
+        semVencimento: formSemVencimento,
+        recursos: {
+          relatoriosAvancados: formRelatoriosAvancados,
+          suportePrioritario: formSuportePrioritario,
+          integracaoPersonalizada: formIntegracaoPersonalizada,
+          treinamentoIncluido: formTreinamentoIncluido
+        },
         ativo: formAtivo
       });
       refreshPlanos();
@@ -115,23 +247,26 @@ const PlanosPage: React.FC = () => {
     }
   };
   
-  const handleAddRecurso = () => {
-    if (novoRecurso.trim() !== "" && !formRecursos.includes(novoRecurso.trim())) {
-      setFormRecursos([...formRecursos, novoRecurso.trim()]);
-      setNovoRecurso("");
-    }
-  };
-  
-  const handleRemoveRecurso = (index: number) => {
-    const newRecursos = [...formRecursos];
-    newRecursos.splice(index, 1);
-    setFormRecursos(newRecursos);
-  };
-  
   const filteredPlanos = planos.filter(plano => 
     plano.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     plano.descricao.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const formatarLimiteEmpresas = (plano: Plano) => {
+    if (plano.empresasIlimitadas) return "Ilimitadas";
+    return plano.limiteEmpresas === 1 ? "1 empresa" : `${plano.limiteEmpresas} empresas`;
+  };
+
+  const formatarLimiteEmpregados = (plano: Plano) => {
+    if (plano.empregadosIlimitados) return "Ilimitados";
+    return `Até ${plano.limiteEmpregados}`;
+  };
+
+  const formatarDataValidade = (plano: Plano) => {
+    if (plano.semVencimento) return "Sem vencimento";
+    if (!plano.dataValidade) return "Não definida";
+    return format(new Date(plano.dataValidade), "dd/MM/yyyy", { locale: ptBR });
+  };
 
   return (
     <AdminLayout title="Planos">
@@ -151,7 +286,7 @@ const PlanosPage: React.FC = () => {
                   Novo Plano
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
+              <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Adicionar Novo Plano</DialogTitle>
                   <DialogDescription>
@@ -185,52 +320,149 @@ const PlanosPage: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="duracao">Duração (meses)</Label>
+                      <Label htmlFor="valorImplantacao">Valor de Implantação (R$)</Label>
                       <Input 
-                        id="duracao" 
+                        id="valorImplantacao" 
                         type="number" 
-                        min={1}
-                        value={formDuracao} 
-                        onChange={(e) => setFormDuracao(Number(e.target.value))} 
+                        min={0}
+                        step={0.01}
+                        value={formValorImplantacao} 
+                        onChange={(e) => setFormValorImplantacao(Number(e.target.value))} 
                       />
                     </div>
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="limiteEmpresas">Limite de Empresas</Label>
+                      <div className="flex flex-col space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Switch 
+                            id="empresasIlimitadas"
+                            checked={formEmpresasIlimitadas} 
+                            onCheckedChange={setFormEmpresasIlimitadas}
+                          />
+                          <Label htmlFor="empresasIlimitadas" className="font-normal">Ilimitadas</Label>
+                        </div>
+                        {!formEmpresasIlimitadas && (
+                          <Input 
+                            id="limiteEmpresas" 
+                            type="number" 
+                            min={1}
+                            value={formLimiteEmpresas} 
+                            onChange={(e) => setFormLimiteEmpresas(Number(e.target.value))} 
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="limiteEmpregados">Limite de Empregados</Label>
+                      <div className="flex flex-col space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Switch 
+                            id="empregadosIlimitados"
+                            checked={formEmpregadosIlimitados} 
+                            onCheckedChange={setFormEmpregadosIlimitados}
+                          />
+                          <Label htmlFor="empregadosIlimitados" className="font-normal">Ilimitados</Label>
+                        </div>
+                        {!formEmpregadosIlimitados && (
+                          <Input 
+                            id="limiteEmpregados" 
+                            type="number" 
+                            min={1}
+                            value={formLimiteEmpregados} 
+                            onChange={(e) => setFormLimiteEmpregados(Number(e.target.value))} 
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
                   <div className="space-y-2">
-                    <Label>Ativo</Label>
-                    <div className="flex items-center space-x-2">
-                      <input 
-                        type="checkbox" 
-                        id="ativo"
-                        checked={formAtivo} 
-                        onChange={(e) => setFormAtivo(e.target.checked)}
-                        className="h-4 w-4"
-                      />
-                      <Label htmlFor="ativo" className="font-normal">Plano disponível para novos contratos</Label>
+                    <Label>Data de Validade</Label>
+                    <div className="flex flex-col space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Switch 
+                          id="semVencimento"
+                          checked={formSemVencimento} 
+                          onCheckedChange={setFormSemVencimento}
+                        />
+                        <Label htmlFor="semVencimento" className="font-normal">Sem vencimento</Label>
+                      </div>
+                      {!formSemVencimento && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !formDataValidade && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {formDataValidade ? format(formDataValidade, "dd/MM/yyyy", { locale: ptBR }) : "Selecione uma data"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={formDataValidade || undefined}
+                              onSelect={date => setFormDataValidade(date)}
+                              initialFocus
+                              locale={ptBR}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label>Recursos Incluídos</Label>
-                    <div className="flex gap-2">
-                      <Input 
-                        placeholder="Adicionar recurso..." 
-                        value={novoRecurso} 
-                        onChange={(e) => setNovoRecurso(e.target.value)} 
-                      />
-                      <Button type="button" onClick={handleAddRecurso}>Adicionar</Button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="relatoriosAvancados" 
+                          checked={formRelatoriosAvancados}
+                          onCheckedChange={(checked) => setFormRelatoriosAvancados(checked === true)}
+                        />
+                        <Label htmlFor="relatoriosAvancados" className="font-normal">Relatórios avançados</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="suportePrioritario" 
+                          checked={formSuportePrioritario}
+                          onCheckedChange={(checked) => setFormSuportePrioritario(checked === true)}
+                        />
+                        <Label htmlFor="suportePrioritario" className="font-normal">Suporte prioritário</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="integracaoPersonalizada" 
+                          checked={formIntegracaoPersonalizada}
+                          onCheckedChange={(checked) => setFormIntegracaoPersonalizada(checked === true)}
+                        />
+                        <Label htmlFor="integracaoPersonalizada" className="font-normal">Integração personalizada</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="treinamentoIncluido" 
+                          checked={formTreinamentoIncluido}
+                          onCheckedChange={(checked) => setFormTreinamentoIncluido(checked === true)}
+                        />
+                        <Label htmlFor="treinamentoIncluido" className="font-normal">Treinamento incluído</Label>
+                      </div>
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {formRecursos.map((recurso, index) => (
-                        <Badge key={index} className="flex items-center gap-1">
-                          {recurso}
-                          <button 
-                            type="button" 
-                            onClick={() => handleRemoveRecurso(index)}
-                            className="ml-1 p-1 rounded-full hover:bg-gray-700"
-                          >
-                            <X size={12} />
-                          </button>
-                        </Badge>
-                      ))}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Status do Plano</Label>
+                    <div className="flex items-center space-x-2">
+                      <Switch 
+                        id="ativo"
+                        checked={formAtivo} 
+                        onCheckedChange={setFormAtivo}
+                      />
+                      <Label htmlFor="ativo" className="font-normal">
+                        {formAtivo ? "Ativo" : "Inativo"}
+                      </Label>
                     </div>
                   </div>
                 </div>
@@ -256,8 +488,9 @@ const PlanosPage: React.FC = () => {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Descrição</TableHead>
-                <TableHead>Valor Mensal</TableHead>
-                <TableHead>Duração</TableHead>
+                <TableHead>Valores</TableHead>
+                <TableHead>Limites</TableHead>
+                <TableHead>Validade</TableHead>
                 <TableHead>Recursos</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -266,7 +499,7 @@ const PlanosPage: React.FC = () => {
             <TableBody>
               {filteredPlanos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-4 text-muted-foreground">
                     Nenhum plano encontrado.
                   </TableCell>
                 </TableRow>
@@ -276,16 +509,46 @@ const PlanosPage: React.FC = () => {
                     <TableCell className="font-medium">{plano.nome}</TableCell>
                     <TableCell className="max-w-[200px] truncate">{plano.descricao}</TableCell>
                     <TableCell>
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plano.valorMensal)}
+                      <div className="flex flex-col">
+                        <span>Mensal: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plano.valorMensal)}</span>
+                        <span className="text-xs text-muted-foreground">
+                          Impl: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plano.valorImplantacao)}
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell>{plano.duracao} meses</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span>{formatarLimiteEmpresas(plano)}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatarLimiteEmpregados(plano)} empregados
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {formatarDataValidade(plano)}
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1 max-w-[200px]">
-                        {plano.recursos.map((recurso, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {recurso}
+                        {plano.recursos.relatoriosAvancados && (
+                          <Badge variant="outline" className="text-xs">
+                            Relatórios
                           </Badge>
-                        ))}
+                        )}
+                        {plano.recursos.suportePrioritario && (
+                          <Badge variant="outline" className="text-xs">
+                            Suporte
+                          </Badge>
+                        )}
+                        {plano.recursos.integracaoPersonalizada && (
+                          <Badge variant="outline" className="text-xs">
+                            Integração
+                          </Badge>
+                        )}
+                        {plano.recursos.treinamentoIncluido && (
+                          <Badge variant="outline" className="text-xs">
+                            Treinamento
+                          </Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -319,9 +582,9 @@ const PlanosPage: React.FC = () => {
         </CardContent>
       </Card>
       
-      {/* Modal de Edição */}
+      {/* Modal de Edição - Mesmo conteúdo do modal de Adição */}
       <Dialog open={openEditModal} onOpenChange={setOpenEditModal}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Plano</DialogTitle>
             <DialogDescription>
@@ -355,52 +618,149 @@ const PlanosPage: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-duracao">Duração (meses)</Label>
+                <Label htmlFor="edit-valorImplantacao">Valor de Implantação (R$)</Label>
                 <Input 
-                  id="edit-duracao" 
+                  id="edit-valorImplantacao" 
                   type="number" 
-                  min={1}
-                  value={formDuracao} 
-                  onChange={(e) => setFormDuracao(Number(e.target.value))} 
+                  min={0}
+                  step={0.01}
+                  value={formValorImplantacao} 
+                  onChange={(e) => setFormValorImplantacao(Number(e.target.value))} 
                 />
               </div>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-limiteEmpresas">Limite de Empresas</Label>
+                <div className="flex flex-col space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="edit-empresasIlimitadas"
+                      checked={formEmpresasIlimitadas} 
+                      onCheckedChange={setFormEmpresasIlimitadas}
+                    />
+                    <Label htmlFor="edit-empresasIlimitadas" className="font-normal">Ilimitadas</Label>
+                  </div>
+                  {!formEmpresasIlimitadas && (
+                    <Input 
+                      id="edit-limiteEmpresas" 
+                      type="number" 
+                      min={1}
+                      value={formLimiteEmpresas} 
+                      onChange={(e) => setFormLimiteEmpresas(Number(e.target.value))} 
+                    />
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-limiteEmpregados">Limite de Empregados</Label>
+                <div className="flex flex-col space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="edit-empregadosIlimitados"
+                      checked={formEmpregadosIlimitados} 
+                      onCheckedChange={setFormEmpregadosIlimitados}
+                    />
+                    <Label htmlFor="edit-empregadosIlimitados" className="font-normal">Ilimitados</Label>
+                  </div>
+                  {!formEmpregadosIlimitados && (
+                    <Input 
+                      id="edit-limiteEmpregados" 
+                      type="number" 
+                      min={1}
+                      value={formLimiteEmpregados} 
+                      onChange={(e) => setFormLimiteEmpregados(Number(e.target.value))} 
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
             <div className="space-y-2">
-              <Label>Ativo</Label>
-              <div className="flex items-center space-x-2">
-                <input 
-                  type="checkbox" 
-                  id="edit-ativo"
-                  checked={formAtivo} 
-                  onChange={(e) => setFormAtivo(e.target.checked)}
-                  className="h-4 w-4"
-                />
-                <Label htmlFor="edit-ativo" className="font-normal">Plano disponível para novos contratos</Label>
+              <Label>Data de Validade</Label>
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="edit-semVencimento"
+                    checked={formSemVencimento} 
+                    onCheckedChange={setFormSemVencimento}
+                  />
+                  <Label htmlFor="edit-semVencimento" className="font-normal">Sem vencimento</Label>
+                </div>
+                {!formSemVencimento && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formDataValidade && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formDataValidade ? format(formDataValidade, "dd/MM/yyyy", { locale: ptBR }) : "Selecione uma data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={formDataValidade || undefined}
+                        onSelect={date => setFormDataValidade(date)}
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
               </div>
             </div>
             <div className="space-y-2">
               <Label>Recursos Incluídos</Label>
-              <div className="flex gap-2">
-                <Input 
-                  placeholder="Adicionar recurso..." 
-                  value={novoRecurso} 
-                  onChange={(e) => setNovoRecurso(e.target.value)} 
-                />
-                <Button type="button" onClick={handleAddRecurso}>Adicionar</Button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="edit-relatoriosAvancados" 
+                    checked={formRelatoriosAvancados}
+                    onCheckedChange={(checked) => setFormRelatoriosAvancados(checked === true)}
+                  />
+                  <Label htmlFor="edit-relatoriosAvancados" className="font-normal">Relatórios avançados</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="edit-suportePrioritario" 
+                    checked={formSuportePrioritario}
+                    onCheckedChange={(checked) => setFormSuportePrioritario(checked === true)}
+                  />
+                  <Label htmlFor="edit-suportePrioritario" className="font-normal">Suporte prioritário</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="edit-integracaoPersonalizada" 
+                    checked={formIntegracaoPersonalizada}
+                    onCheckedChange={(checked) => setFormIntegracaoPersonalizada(checked === true)}
+                  />
+                  <Label htmlFor="edit-integracaoPersonalizada" className="font-normal">Integração personalizada</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="edit-treinamentoIncluido" 
+                    checked={formTreinamentoIncluido}
+                    onCheckedChange={(checked) => setFormTreinamentoIncluido(checked === true)}
+                  />
+                  <Label htmlFor="edit-treinamentoIncluido" className="font-normal">Treinamento incluído</Label>
+                </div>
               </div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {formRecursos.map((recurso, index) => (
-                  <Badge key={index} className="flex items-center gap-1">
-                    {recurso}
-                    <button 
-                      type="button" 
-                      onClick={() => handleRemoveRecurso(index)}
-                      className="ml-1 p-1 rounded-full hover:bg-gray-700"
-                    >
-                      <X size={12} />
-                    </button>
-                  </Badge>
-                ))}
+            </div>
+            <div className="space-y-2">
+              <Label>Status do Plano</Label>
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="edit-ativo"
+                  checked={formAtivo} 
+                  onCheckedChange={setFormAtivo}
+                />
+                <Label htmlFor="edit-ativo" className="font-normal">
+                  {formAtivo ? "Ativo" : "Inativo"}
+                </Label>
               </div>
             </div>
           </div>

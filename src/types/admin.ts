@@ -27,8 +27,19 @@ export interface Plano {
   nome: string;
   descricao: string;
   valorMensal: number;
-  duracao: number; // em meses
-  recursos: string[]; // lista de recursos incluídos
+  valorImplantacao: number;
+  limiteEmpresas: number;
+  empresasIlimitadas: boolean;
+  limiteEmpregados: number;
+  empregadosIlimitados: boolean;
+  dataValidade: number | null; // timestamp ou null para sem vencimento
+  semVencimento: boolean;
+  recursos: {
+    relatoriosAvancados: boolean;
+    suportePrioritario: boolean;
+    integracaoPersonalizada: boolean;
+    treinamentoIncluido: boolean;
+  };
   ativo: boolean;
 }
 

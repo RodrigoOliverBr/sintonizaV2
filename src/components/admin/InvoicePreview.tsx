@@ -4,6 +4,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Fatura, Cliente, Contrato } from "@/types/admin";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
 
 interface InvoicePreviewProps {
   fatura: Fatura;
@@ -14,6 +16,10 @@ interface InvoicePreviewProps {
 }
 
 const InvoicePreview = ({ fatura, cliente, contrato, open, onOpenChange }: InvoicePreviewProps) => {
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl print:shadow-none print:border-none" onOpenAutoFocus={(e) => e.preventDefault()}>
@@ -61,6 +67,13 @@ const InvoicePreview = ({ fatura, cliente, contrato, open, onOpenChange }: Invoi
             <p>Para dúvidas ou informações adicionais, entre em contato:</p>
             <p>Email: financeiro@empresa.com.br</p>
             <p>Telefone: (11) 1234-5678</p>
+          </div>
+          
+          <div className="print:hidden mt-6 flex justify-end">
+            <Button variant="outline" onClick={handlePrint} className="flex items-center gap-2">
+              <Printer size={16} />
+              Imprimir
+            </Button>
           </div>
         </div>
       </DialogContent>

@@ -139,20 +139,34 @@ const FaturamentoPage: React.FC = () => {
     setOpenDeleteModal(true);
   };
   
+  const handleOpenPreview = (fatura: Fatura) => {
+    setPreviewFatura(fatura);
+  };
+  
   const handleAddFatura = () => {
     try {
       const dataEmissao = new Date(formDataEmissao).getTime();
       const dataVencimento = new Date(formDataVencimento).getTime();
       
-      addFatura({
+      const existingFatura = faturas.find(f => 
+        f.contratoId === formContratoId && 
+        f.referencia === formReferencia
+      );
+      
+      if (existingFatura) {
+        toast.error("Já existe uma fatura para este contrato e período de referência.");
+        return;
+      }
+      
+      const novaFatura = addFatura({
         clienteId: formClienteId,
         contratoId: formContratoId,
         dataEmissao,
         dataVencimento,
         valor: formValor,
-        status: formStatus,
-        referencia: formReferencia
+        status: formStatus
       });
+      
       refreshFaturas();
       setOpenNewModal(false);
       clearForm();
@@ -168,6 +182,19 @@ const FaturamentoPage: React.FC = () => {
     try {
       const dataEmissao = new Date(formDataEmissao).getTime();
       const dataVencimento = new Date(formDataVencimento).getTime();
+      
+      if (formReferencia !== currentFatura.referencia) {
+        const existingFatura = faturas.find(f => 
+          f.id !== currentFatura.id &&
+          f.contratoId === formContratoId && 
+          f.referencia === formReferencia
+        );
+        
+        if (existingFatura) {
+          toast.error("Já existe uma fatura para este contrato e período de referência.");
+          return;
+        }
+      }
       
       updateFatura({
         ...currentFatura,

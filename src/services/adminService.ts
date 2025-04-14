@@ -362,7 +362,8 @@ export const deleteContrato = (id: string): void => {
 export const getFaturas = (): Fatura[] => {
   const faturas = localStorage.getItem(FATURAS_KEY);
   if (!faturas) {
-    return [];
+    localStorage.setItem(FATURAS_KEY, JSON.stringify(faturasIniciais));
+    return faturasIniciais;
   }
   return JSON.parse(faturas);
 };
@@ -496,6 +497,10 @@ export const gerarFaturasProgramadas = (contrato: Contrato): Fatura[] => {
   // Gerar as faturas
   const dataInicio = new Date(contrato.dataInicio);
   
+  // Verificar faturas existentes para este contrato
+  const faturasExistentes = faturas.filter(f => f.contratoId === contrato.id);
+  const referenciasExistentes = new Set(faturasExistentes.map(f => f.referencia));
+  
   for (let i = 0; i < quantidadeFaturas; i++) {
     // Calcular data de emissão (data atual para a primeira fatura, ou baseada no ciclo para as seguintes)
     const dataEmissao = i === 0 ? new Date() : calcularDataProximaFatura(dataInicio, contrato.cicloFaturamento, i);
@@ -503,6 +508,17 @@ export const gerarFaturasProgramadas = (contrato: Contrato): Fatura[] => {
     // Calcular data de vencimento (15 dias após emissão)
     const dataVencimento = new Date(dataEmissao);
     dataVencimento.setDate(dataVencimento.getDate() + 15);
+    
+    // Gerar referência para esta fatura
+    const month = (dataEmissao.getMonth() + 1).toString().padStart(2, '0');
+    const year = dataEmissao.getFullYear();
+    const referencia = `${month}/${year}`;
+    
+    // Verificar se já existe uma fatura com esta referência para este contrato
+    if (referenciasExistentes.has(referencia)) {
+      console.log(`Fatura com referência ${referencia} já existe para o contrato ${contrato.numero}, pulando.`);
+      continue;
+    }
     
     // Criar a fatura
     const novaFatura: Omit<Fatura, "id" | "numero" | "referencia"> = {
@@ -517,6 +533,9 @@ export const gerarFaturasProgramadas = (contrato: Contrato): Fatura[] => {
     // Adicionar a fatura
     const faturaAdicionada = addFatura(novaFatura);
     faturasGeradas.push(faturaAdicionada);
+    
+    // Adicionar à lista de referências existentes para evitar duplicatas na mesma operação
+    referenciasExistentes.add(faturaAdicionada.referencia);
   }
   
   // Atualizar o número de ciclos gerados no contrato

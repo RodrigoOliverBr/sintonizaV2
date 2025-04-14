@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,12 @@ import { getFaturas, addFatura, updateFatura, deleteFatura, getClientes, getCont
 import { toast } from "sonner";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const FaturamentoPage: React.FC = () => {
   const [faturas, setFaturas] = useState<Fatura[]>(getFaturas());
@@ -26,12 +31,12 @@ const FaturamentoPage: React.FC = () => {
   const [openEditModal, setOpenEditModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [openBatchDeleteModal, setOpenBatchDeleteModal] = useState(false);
+  const [openBatchStatusModal, setOpenBatchStatusModal] = useState(false);
   const [currentFatura, setCurrentFatura] = useState<Fatura | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<StatusFatura | "todos">("todos");
   const [anoFiltro, setAnoFiltro] = useState<string>(new Date().getFullYear().toString());
   
-  // Form fields
   const [formClienteId, setFormClienteId] = useState("");
   const [formContratoId, setFormContratoId] = useState("");
   const [formDataEmissao, setFormDataEmissao] = useState("");
@@ -40,12 +45,10 @@ const FaturamentoPage: React.FC = () => {
   const [formStatus, setFormStatus] = useState<StatusFatura>("pendente");
   const [formReferencia, setFormReferencia] = useState("");
   
-  // Filtrar contratos por cliente
   const [contratosCliente, setContratosCliente] = useState<Contrato[]>([]);
   
   const [mesFiltro, setMesFiltro] = useState<string>("todos");
   
-  // Estado para seleção em lote
   const [selectedFaturas, setSelectedFaturas] = useState<BatchSelection>({});
   const [selectAll, setSelectAll] = useState(false);
   
@@ -66,30 +69,26 @@ const FaturamentoPage: React.FC = () => {
   }, [formClienteId, contratos]);
   
   useEffect(() => {
-    // Atualiza valor e referencia quando contrato é selecionado
     if (formContratoId) {
       const contrato = getContratoById(formContratoId);
       if (contrato) {
         setFormValor(contrato.valorMensal);
         
-        // Gerar referência baseada na data atual
         const hoje = new Date();
         const mes = (hoje.getMonth() + 1).toString().padStart(2, '0');
         const ano = hoje.getFullYear();
         setFormReferencia(`${mes}/${ano}`);
         
-        // Sugerir datas
         const dataEmissao = new Date();
         setFormDataEmissao(format(dataEmissao, "yyyy-MM-dd"));
         
         const dataVencimento = addMonths(dataEmissao, 1);
-        dataVencimento.setDate(10); // Vencimento no dia 10 do próximo mês
+        dataVencimento.setDate(10);
         setFormDataVencimento(format(dataVencimento, "yyyy-MM-dd"));
       }
     }
   }, [formContratoId]);
-
-  // Efeito para lidar com a seleção de todos os checkboxes
+  
   useEffect(() => {
     if (selectAll) {
       const newSelected: BatchSelection = {};
@@ -98,8 +97,6 @@ const FaturamentoPage: React.FC = () => {
       });
       setSelectedFaturas(newSelected);
     } else {
-      // Não limpar todas as seleções se o usuário desmarcar selectAll manualmente
-      // apenas quando ele clicar no checkbox principal
     }
   }, [selectAll]);
   
@@ -201,7 +198,6 @@ const FaturamentoPage: React.FC = () => {
     }
   };
   
-  // Função para exclusão em lote
   const handleBatchDelete = () => {
     try {
       let count = 0;
@@ -225,13 +221,54 @@ const FaturamentoPage: React.FC = () => {
     }
   };
   
+  const handleBatchStatusUpdate = async (newStatus: StatusFatura) => {
+    try {
+      let count = 0;
+      Object.keys(selectedFaturas).forEach(id => {
+        if (selectedFaturas[id]) {
+          const fatura = faturas.find(f => f.id === id);
+          if (fatura) {
+            updateFatura({
+              ...fatura,
+              status: newStatus
+            });
+            count++;
+          }
+        }
+      });
+      
+      refreshFaturas();
+      setSelectedFaturas({});
+      setSelectAll(false);
+      setOpenBatchStatusModal(false);
+      
+      if (count > 0) {
+        toast.success(`Status de ${count} ${count === 1 ? 'fatura atualizado' : 'faturas atualizados'} com sucesso!`);
+      }
+    } catch (error) {
+      toast.error("Erro ao atualizar status das faturas.");
+    }
+  };
+  
+  const handleStatusChange = async (fatura: Fatura, newStatus: StatusFatura) => {
+    try {
+      updateFatura({
+        ...fatura,
+        status: newStatus
+      });
+      refreshFaturas();
+      toast.success("Status da fatura atualizado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao atualizar status da fatura.");
+    }
+  };
+  
   const handleSelectFatura = (id: string, checked: boolean) => {
     setSelectedFaturas(prev => ({
       ...prev,
       [id]: checked
     }));
     
-    // Verificar se todos os itens estão selecionados
     const allSelected = filteredFaturas.every(
       fatura => fatura.id === id ? checked : (selectedFaturas[fatura.id] || false)
     );
@@ -262,7 +299,6 @@ const FaturamentoPage: React.FC = () => {
   };
   
   const handleFiltrarFaturas = () => {
-    // Apenas refresh, pois a filtragem ocorre na função filteredFaturas
     refreshFaturas();
   };
   
@@ -286,13 +322,11 @@ const FaturamentoPage: React.FC = () => {
     return filtroBusca && filtroStatus && filtroAno && filtroMes;
   });
   
-  // Resumo financeiro
   const totalPendente = filteredFaturas.filter(f => f.status === 'pendente').reduce((acc, f) => acc + f.valor, 0);
   const totalPago = filteredFaturas.filter(f => f.status === 'pago').reduce((acc, f) => acc + f.valor, 0);
   const totalAtrasado = filteredFaturas.filter(f => f.status === 'atrasado').reduce((acc, f) => acc + f.valor, 0);
   const totalGeral = totalPendente + totalPago + totalAtrasado;
   
-  // Agrupar faturas por mês para visão mensal
   const faturasAgrupadasPorMes = () => {
     const meses: {[key: string]: {recebido: number, pendente: number, atrasado: number}} = {};
     
@@ -664,15 +698,41 @@ const FaturamentoPage: React.FC = () => {
                           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(fatura.valor)}
                         </TableCell>
                         <TableCell>
-                          <Badge 
-                            variant={
-                              fatura.status === "pago" ? "default" : 
-                              fatura.status === "pendente" ? "outline" : "destructive"
-                            }
-                          >
-                            {fatura.status === "pago" ? "Pago" : 
-                             fatura.status === "pendente" ? "Pendente" : "Atrasado"}
-                          </Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-full justify-start p-2">
+                                <Badge 
+                                  variant={
+                                    fatura.status === "pago" ? "default" : 
+                                    fatura.status === "pendente" ? "outline" : "destructive"
+                                  }
+                                >
+                                  {fatura.status === "pago" ? "Pago" : 
+                                   fatura.status === "pendente" ? "Pendente" : "Atrasado"}
+                                </Badge>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem 
+                                onClick={() => handleStatusChange(fatura, "pendente")}
+                                disabled={fatura.status === "pendente"}
+                              >
+                                Pendente
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleStatusChange(fatura, "pago")}
+                                disabled={fatura.status === "pago"}
+                              >
+                                Pago
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleStatusChange(fatura, "atrasado")}
+                                disabled={fatura.status === "atrasado"}
+                              >
+                                Atrasado
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -822,7 +882,6 @@ const FaturamentoPage: React.FC = () => {
         </TabsContent>
       </Tabs>
       
-      {/* Modal de Edição */}
       <Dialog open={openEditModal} onOpenChange={setOpenEditModal}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -945,7 +1004,6 @@ const FaturamentoPage: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Modal de Confirmação para Excluir */}
       <Dialog open={openDeleteModal} onOpenChange={setOpenDeleteModal}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
@@ -970,7 +1028,6 @@ const FaturamentoPage: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Modal de Confirmação para Exclusão em Lote */}
       <Dialog open={openBatchDeleteModal} onOpenChange={setOpenBatchDeleteModal}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
@@ -988,6 +1045,52 @@ const FaturamentoPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <Dialog open={openBatchStatusModal} onOpenChange={setOpenBatchStatusModal}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Atualizar Status das Faturas</DialogTitle>
+            <DialogDescription>
+              Selecione o novo status para {getSelectedCount()} {getSelectedCount() === 1 ? 'fatura selecionada' : 'faturas selecionadas'}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label>Novo Status</Label>
+              <Select onValueChange={(value: StatusFatura) => handleBatchStatusUpdate(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o novo status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pendente">Pendente</SelectItem>
+                  <SelectItem value="pago">Pago</SelectItem>
+                  <SelectItem value="atrasado">Atrasado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {getSelectedCount() > 0 && (
+        <div className="fixed bottom-4 right-4 flex gap-2 bg-background p-4 shadow-lg rounded-lg border">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => setOpenBatchStatusModal(true)}
+          >
+            Alterar Status ({getSelectedCount()})
+          </Button>
+          <Button 
+            variant="destructive" 
+            className="flex items-center gap-2"
+            onClick={() => setOpenBatchDeleteModal(true)}
+          >
+            <Trash2 size={16} />
+            Excluir Selecionadas ({getSelectedCount()})
+          </Button>
+        </div>
+      )}
     </AdminLayout>
   );
 };

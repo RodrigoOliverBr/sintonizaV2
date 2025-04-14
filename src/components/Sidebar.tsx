@@ -1,101 +1,43 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import {
-  ClipboardList,
-  HelpCircle,
-  LifeBuoy,
-  BookOpen,
-  Menu,
-  X,
-  Building2,
-  Users,
-  BarChart2
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { LogOut } from "lucide-react";
 import SidebarLinks from "./SidebarLinks";
+import { cn } from "@/lib/utils";
 
-interface SidebarProps {
-  className?: string;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ className }) => {
+const Sidebar = () => {
   const location = useLocation();
-  const [isOpen, setIsOpen] = React.useState(false);
 
-  const MobileNav = () => (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild className="md:hidden">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-esocial-darkGray"
-        >
-          <Menu size={24} />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="p-0">
-        <div className="flex flex-col h-full bg-white">
-          <div className="p-4 border-b flex justify-between items-center">
-            <div className="flex items-center">
-              <img 
-                src="/lovable-uploads/5fbfce9a-dae3-444b-99c8-9b92040ef7e2.png" 
-                alt="Sintonia Logo" 
-                className="h-8 mr-2" 
-              />
-              <span className="font-semibold text-lg text-esocial-darkGray">Sintonia</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsOpen(false)}
-            >
-              <X size={18} />
-            </Button>
-          </div>
-          <nav className="flex-1 p-4">
-            <SidebarLinks />
-          </nav>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
+  const handleLogout = () => {
+    localStorage.removeItem("sintonia:userType");
+    localStorage.removeItem("sintonia:currentCliente");
+    window.location.href = "/login";
+  };
 
   return (
-    <>
-      <MobileNav />
-      <div
-        className={cn(
-          "hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r print:hidden",
-          className
-        )}
-      >
-        <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200">
-          <div className="flex items-center h-16 flex-shrink-0 px-4 border-b">
-            <div className="flex items-center">
-              <img 
-                src="/lovable-uploads/5fbfce9a-dae3-444b-99c8-9b92040ef7e2.png" 
-                alt="Sintonia Logo" 
-                className="h-10 mr-2" 
-              />
-              <span className="text-xl font-semibold text-esocial-darkGray">
-                Sintonia
-              </span>
-            </div>
-          </div>
-          <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-            <nav className="mt-5 flex-1 px-4 space-y-1">
-              <SidebarLinks />
-            </nav>
-          </div>
-          <div className="flex-shrink-0 flex border-t p-4">
-            <div className="text-xs text-muted-foreground">© 2025 eSocial Brasil</div>
-          </div>
-        </div>
+    <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 flex-col border-r bg-white md:flex">
+      <div className="flex h-16 items-center justify-center border-b px-6">
+        <img
+          src="/lovable-uploads/5fbfce9a-dae3-444b-99c8-9b92040ef7e2.png"
+          alt="Sintonia Logo"
+          className="h-10"
+        />
       </div>
-    </>
+      <nav className="flex-1 overflow-y-auto py-2">
+        <SidebarLinks />
+      </nav>
+      <div className="border-t p-4">
+        <Button
+          variant="outline"
+          className="w-full justify-start"
+          onClick={handleLogout}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sair
+        </Button>
+      </div>
+    </aside>
   );
 };
 

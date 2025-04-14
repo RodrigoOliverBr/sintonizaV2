@@ -3,7 +3,7 @@ export type ClienteStatus = 'liberado' | 'bloqueado';
 export type TipoPessoa = 'fisica' | 'juridica';
 export type StatusContrato = 'ativo' | 'em-analise' | 'cancelado';
 export type CicloFaturamento = 'mensal' | 'trimestral' | 'anual';
-export type StatusFatura = 'pendente' | 'pago' | 'atrasado';
+export type StatusFatura = 'pendente' | 'pago' | 'atrasado' | 'programada';
 
 export interface Cliente {
   id: string;

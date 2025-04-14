@@ -1,4 +1,4 @@
-import { Cliente, Plano, Contrato, Fatura, StatusFatura } from "@/types/admin";
+import { Cliente, Plano, Contrato, Fatura, StatusFatura, CicloFaturamento } from "@/types/admin";
 
 // Keys de localStorage
 const CLIENTES_KEY = "sintonia:clientes";
@@ -334,6 +334,10 @@ export const addContrato = (contrato: Omit<Contrato, "id" | "numero" | "ciclosGe
   }
   
   localStorage.setItem(CONTRATOS_KEY, JSON.stringify([...contratos, newContrato]));
+  
+  // Após criar o contrato, gerar automaticamente as faturas programadas
+  gerarFaturasProgramadas(newContrato);
+  
   return newContrato;
 };
 
@@ -435,6 +439,96 @@ export const calcularDataProximaRenovacao = (
   return data.getTime();
 };
 
+export const calcularDataProximaFatura = (
+  dataBase: Date,
+  ciclo: CicloFaturamento,
+  numeroCiclo: number = 1
+): Date => {
+  const dataFatura = new Date(dataBase);
+  
+  switch (ciclo) {
+    case 'mensal':
+      dataFatura.setMonth(dataFatura.getMonth() + numeroCiclo);
+      break;
+    case 'trimestral':
+      dataFatura.setMonth(dataFatura.getMonth() + (numeroCiclo * 3));
+      break;
+    case 'anual':
+      dataFatura.setFullYear(dataFatura.getFullYear() + numeroCiclo);
+      break;
+  }
+  
+  // Definir o dia do vencimento para o mesmo dia do início
+  return dataFatura;
+};
+
+export const gerarFaturasProgramadas = (contrato: Contrato): Fatura[] => {
+  const faturas = getFaturas();
+  const faturasGeradas: Fatura[] = [];
+  
+  // Determinar quantas faturas devem ser geradas
+  let quantidadeFaturas = 12; // Padrão: 12 faturas para contratos sem data fim
+  
+  // Para contratos com data fim definida, calcular quantas faturas cabem no período
+  if (!getPlanoById(contrato.planoId)?.semVencimento) {
+    const dataInicio = new Date(contrato.dataInicio);
+    const dataFim = new Date(contrato.dataFim);
+    
+    // Calcular diferença em meses/trimestres/anos conforme o ciclo
+    switch (contrato.cicloFaturamento) {
+      case 'mensal':
+        quantidadeFaturas = (dataFim.getFullYear() - dataInicio.getFullYear()) * 12 + 
+                            (dataFim.getMonth() - dataInicio.getMonth());
+        break;
+      case 'trimestral':
+        quantidadeFaturas = Math.floor(((dataFim.getFullYear() - dataInicio.getFullYear()) * 12 + 
+                            (dataFim.getMonth() - dataInicio.getMonth())) / 3);
+        break;
+      case 'anual':
+        quantidadeFaturas = dataFim.getFullYear() - dataInicio.getFullYear();
+        break;
+    }
+    
+    // Garantir pelo menos 1 fatura
+    quantidadeFaturas = Math.max(1, quantidadeFaturas);
+  }
+  
+  // Gerar as faturas
+  const dataInicio = new Date(contrato.dataInicio);
+  
+  for (let i = 0; i < quantidadeFaturas; i++) {
+    // Calcular data de emissão (data atual para a primeira fatura, ou baseada no ciclo para as seguintes)
+    const dataEmissao = i === 0 ? new Date() : calcularDataProximaFatura(dataInicio, contrato.cicloFaturamento, i);
+    
+    // Calcular data de vencimento (15 dias após emissão)
+    const dataVencimento = new Date(dataEmissao);
+    dataVencimento.setDate(dataVencimento.getDate() + 15);
+    
+    // Criar a fatura
+    const novaFatura: Omit<Fatura, "id" | "numero" | "referencia"> = {
+      clienteId: contrato.clienteId,
+      contratoId: contrato.id,
+      dataEmissao: dataEmissao.getTime(),
+      dataVencimento: dataVencimento.getTime(),
+      valor: contrato.valorMensal,
+      status: i === 0 ? 'pendente' : 'pendente' // primeira pendente, demais programadas
+    };
+    
+    // Adicionar a fatura
+    const faturaAdicionada = addFatura(novaFatura);
+    faturasGeradas.push(faturaAdicionada);
+  }
+  
+  // Atualizar o número de ciclos gerados no contrato
+  const contratoAtualizado: Contrato = {
+    ...contrato,
+    ciclosGerados: quantidadeFaturas
+  };
+  updateContrato(contratoAtualizado);
+  
+  return faturasGeradas;
+};
+
 export const renovarContrato = (contratoId: string, ciclos: number = 12): Contrato | null => {
   const contrato = getContratoById(contratoId);
   if (!contrato) return null;
@@ -453,10 +547,13 @@ export const renovarContrato = (contratoId: string, ciclos: number = 12): Contra
   };
   
   updateContrato(contratoAtualizado);
+  
+  // Gerar novas faturas programadas para o próximo período
+  gerarFaturasProgramadas(contratoAtualizado);
+  
   return contratoAtualizado;
 };
 
-// Função para verificar contratos próximos de renovação
 export const getContratosParaRenovar = (diasAntecedencia: number = 30): Contrato[] => {
   const contratos = getContratos();
   const hoje = new Date();
@@ -481,7 +578,6 @@ export const getContratosParaRenovar = (diasAntecedencia: number = 30): Contrato
   });
 };
 
-// Dashboard stats
 export const getDashboardStats = () => {
   const clientes = getClientes();
   const contratos = getContratos();
@@ -536,14 +632,12 @@ export const getDashboardStats = () => {
   };
 };
 
-// Autenticação de admin
 export const checkAdminCredentials = (email: string, password: string): boolean => {
   const admin = JSON.parse(localStorage.getItem(ADMIN_USER_KEY) || '{}');
   return (admin.email === email && admin.password === password) || 
          (defaultAdminUser.email === email && defaultAdminUser.password === password);
 };
 
-// Verifica cliente existente para login no sistema principal
 export const checkClienteCredentials = (email: string, password: string): Cliente | null => {
   console.log("Tentando autenticar cliente:", email);
   const clientes = getClientes();
@@ -582,7 +676,6 @@ export const checkClienteCredentials = (email: string, password: string): Client
   return null;
 };
 
-// Verificar credenciais e determinar o tipo de usuário
 export const checkCredentials = (email: string, password: string): { isValid: boolean, userType: 'admin' | 'cliente' | null, userData?: any } => {
   console.log("Verificando credenciais para:", email);
   

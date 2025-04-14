@@ -142,7 +142,7 @@ const ContratosPage: React.FC = () => {
         dataFim = new Date(formDataFim).getTime();
       }
       
-      addContrato({
+      const novoContrato = addContrato({
         clienteId: formClienteId,
         planoId: formPlanoId,
         dataInicio,
@@ -153,10 +153,11 @@ const ContratosPage: React.FC = () => {
         observacoes: formObservacoes,
         cicloFaturamento: formCicloFaturamento
       });
+      
       refreshContratos();
       setOpenNewModal(false);
       clearForm();
-      toast.success("Contrato adicionado com sucesso!");
+      toast.success("Contrato adicionado com sucesso! Faturas programadas foram geradas automaticamente.");
     } catch (error) {
       toast.error("Erro ao adicionar contrato.");
     }

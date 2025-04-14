@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -40,6 +39,8 @@ const FaturamentoPage: React.FC = () => {
   
   // Filtrar contratos por cliente
   const [contratosCliente, setContratosCliente] = useState<Contrato[]>([]);
+  
+  const [mesFiltro, setMesFiltro] = useState<string>("todos");
   
   useEffect(() => {
     if (formClienteId) {
@@ -207,7 +208,9 @@ const FaturamentoPage: React.FC = () => {
     
     const filtroAno = anoFiltro === "todos" || fatura.referencia.endsWith(anoFiltro);
     
-    return filtroBusca && filtroStatus && filtroAno;
+    const filtroMes = mesFiltro === "todos" || fatura.referencia.startsWith(mesFiltro);
+    
+    return filtroBusca && filtroStatus && filtroAno && filtroMes;
   });
   
   // Resumo financeiro
@@ -398,6 +401,31 @@ const FaturamentoPage: React.FC = () => {
                     className="max-w-xl"
                   />
                   <div className="flex gap-2">
+                    {/* Add month filter */}
+                    <Select 
+                      value={mesFiltro} 
+                      onValueChange={(value: string) => setMesFiltro(value)}
+                    >
+                      <SelectTrigger className="w-[150px]">
+                        <SelectValue placeholder="Filtrar por mês" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos os meses</SelectItem>
+                        <SelectItem value="01">Janeiro</SelectItem>
+                        <SelectItem value="02">Fevereiro</SelectItem>
+                        <SelectItem value="03">Março</SelectItem>
+                        <SelectItem value="04">Abril</SelectItem>
+                        <SelectItem value="05">Maio</SelectItem>
+                        <SelectItem value="06">Junho</SelectItem>
+                        <SelectItem value="07">Julho</SelectItem>
+                        <SelectItem value="08">Agosto</SelectItem>
+                        <SelectItem value="09">Setembro</SelectItem>
+                        <SelectItem value="10">Outubro</SelectItem>
+                        <SelectItem value="11">Novembro</SelectItem>
+                        <SelectItem value="12">Dezembro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
                     <Select 
                       value={filterStatus} 
                       onValueChange={(value: StatusFatura | "todos") => setFilterStatus(value)}
@@ -584,6 +612,31 @@ const FaturamentoPage: React.FC = () => {
                 Acompanhamento financeiro mensal
               </CardDescription>
               <div className="flex gap-2 mt-4">
+                {/* Add month filter here too */}
+                <Select 
+                  value={mesFiltro} 
+                  onValueChange={(value: string) => setMesFiltro(value)}
+                >
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="Filtrar por mês" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os meses</SelectItem>
+                    <SelectItem value="01">Janeiro</SelectItem>
+                    <SelectItem value="02">Fevereiro</SelectItem>
+                    <SelectItem value="03">Março</SelectItem>
+                    <SelectItem value="04">Abril</SelectItem>
+                    <SelectItem value="05">Maio</SelectItem>
+                    <SelectItem value="06">Junho</SelectItem>
+                    <SelectItem value="07">Julho</SelectItem>
+                    <SelectItem value="08">Agosto</SelectItem>
+                    <SelectItem value="09">Setembro</SelectItem>
+                    <SelectItem value="10">Outubro</SelectItem>
+                    <SelectItem value="11">Novembro</SelectItem>
+                    <SelectItem value="12">Dezembro</SelectItem>
+                  </SelectContent>
+                </Select>
+                
                 <Select 
                   value={anoFiltro} 
                   onValueChange={setAnoFiltro}
@@ -723,87 +776,4 @@ const FaturamentoPage: React.FC = () => {
                   <Input 
                     id="edit-dataEmissao" 
                     type="date"
-                    value={formDataEmissao} 
-                    onChange={(e) => setFormDataEmissao(e.target.value)} 
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-dataVencimento">Data de Vencimento</Label>
-                <div className="flex items-center">
-                  <Calendar className="mr-2 h-4 w-4 opacity-50" />
-                  <Input 
-                    id="edit-dataVencimento" 
-                    type="date"
-                    value={formDataVencimento} 
-                    onChange={(e) => setFormDataVencimento(e.target.value)} 
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-valor">Valor (R$)</Label>
-                <Input 
-                  id="edit-valor" 
-                  type="number" 
-                  min={0}
-                  step={0.01}
-                  value={formValor} 
-                  onChange={(e) => setFormValor(Number(e.target.value))} 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-status">Status</Label>
-                <Select 
-                  value={formStatus} 
-                  onValueChange={(value: StatusFatura) => setFormStatus(value)}
-                >
-                  <SelectTrigger id="edit-status">
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pendente">Pendente</SelectItem>
-                    <SelectItem value="pago">Pago</SelectItem>
-                    <SelectItem value="atrasado">Atrasado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-referencia">Referência</Label>
-              <Input 
-                id="edit-referencia" 
-                value={formReferencia} 
-                onChange={(e) => setFormReferencia(e.target.value)}
-                placeholder="Ex: 05/2025" 
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenEditModal(false)}>Cancelar</Button>
-            <Button onClick={handleUpdateFatura}>Salvar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Modal de Exclusão */}
-      <Dialog open={openDeleteModal} onOpenChange={setOpenDeleteModal}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Confirmar exclusão</DialogTitle>
-            <DialogDescription>
-              Você está prestes a excluir a fatura "{currentFatura?.numero}". Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenDeleteModal(false)}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleDeleteFatura}>Excluir</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </AdminLayout>
-  );
-};
-
-export default FaturamentoPage;
+                    value={formDataEmissao}

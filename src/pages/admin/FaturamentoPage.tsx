@@ -280,12 +280,14 @@ const FaturamentoPage: React.FC = () => {
     }
   };
   
-  const handleStatusChange = async (fatura: Fatura, newStatus: StatusFatura) => {
+  const handleStatusChange = (fatura: Fatura, newStatus: StatusFatura) => {
     try {
-      updateFatura({
+      const faturaAtualizada = {
         ...fatura,
         status: newStatus
-      });
+      };
+      
+      updateFatura(faturaAtualizada);
       refreshFaturas();
       toast.success("Status da fatura atualizado com sucesso!");
     } catch (error) {

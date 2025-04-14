@@ -104,6 +104,7 @@ const contratosIniciais: Contrato[] = [
     planoId: "3",
     dataInicio: Date.now() - 60 * 24 * 60 * 60 * 1000, // 60 dias atrás
     dataFim: Date.now() + 305 * 24 * 60 * 60 * 1000, // em 305 dias
+    dataPrimeiroVencimento: Date.now() - 30 * 24 * 60 * 60 * 1000, // Primeiro vencimento 30 dias atrás
     valorMensal: 999.90,
     status: "ativo",
     taxaImplantacao: 500,
@@ -118,6 +119,7 @@ const contratosIniciais: Contrato[] = [
     planoId: "2",
     dataInicio: Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 dias atrás
     dataFim: Date.now() + 335 * 24 * 60 * 60 * 1000, // em 335 dias
+    dataPrimeiroVencimento: Date.now() - 15 * 24 * 60 * 60 * 1000, // Primeiro vencimento 15 dias atrás
     valorMensal: 399.90,
     status: "ativo",
     taxaImplantacao: 300,
@@ -493,7 +495,7 @@ export const gerarFaturasProgramadas = (contrato: Contrato): Fatura[] => {
   }
   
   // Usar a data do primeiro vencimento como base
-  const dataPrimeiroVencimento = new Date(contrato.dataPrimeiroVencimento || contrato.dataInicio);
+  const dataPrimeiroVencimento = new Date(contrato.dataPrimeiroVencimento);
   
   // Verificar faturas existentes para este contrato
   const faturasExistentes = faturas.filter(f => f.contratoId === contrato.id);
@@ -501,16 +503,28 @@ export const gerarFaturasProgramadas = (contrato: Contrato): Fatura[] => {
   
   // Gerar fatura de implantação se houver taxa
   if (contrato.taxaImplantacao > 0) {
+    const dataEmissaoImplantacao = new Date(dataPrimeiroVencimento);
+    dataEmissaoImplantacao.setDate(dataEmissaoImplantacao.getDate() - 15); // 15 dias antes
+    
     const faturaImplantacao: Omit<Fatura, "id" | "numero" | "referencia"> = {
       clienteId: contrato.clienteId,
       contratoId: contrato.id,
-      dataEmissao: new Date().getTime(),
-      dataVencimento: new Date(dataPrimeiroVencimento).getTime(),
+      dataEmissao: dataEmissaoImplantacao.getTime(),
+      dataVencimento: dataPrimeiroVencimento.getTime(),
       valor: contrato.taxaImplantacao,
       status: 'pendente'
     };
-    const faturaAdicionada = addFatura(faturaImplantacao);
-    faturasGeradas.push(faturaAdicionada);
+    
+    // Verificar se já existe uma fatura de implantação
+    const implantacaoExistente = faturasExistentes.find(f => 
+      f.valor === contrato.taxaImplantacao && 
+      f.dataVencimento === dataPrimeiroVencimento.getTime()
+    );
+    
+    if (!implantacaoExistente) {
+      const faturaAdicionada = addFatura(faturaImplantacao);
+      faturasGeradas.push(faturaAdicionada);
+    }
   }
 
   // Gerar as faturas recorrentes

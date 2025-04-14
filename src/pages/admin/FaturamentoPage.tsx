@@ -251,7 +251,7 @@ const FaturamentoPage: React.FC = () => {
     }
   };
   
-  const handleBatchStatusUpdate = async (newStatus: StatusFatura) => {
+  const handleBatchStatusUpdate = (newStatus: StatusFatura) => {
     try {
       let count = 0;
       Object.keys(selectedFaturas).forEach(id => {

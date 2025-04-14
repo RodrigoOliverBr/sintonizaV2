@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,6 @@ const ContratosPage: React.FC = () => {
   const [currentContrato, setCurrentContrato] = useState<Contrato | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Form fields
   const [formClienteId, setFormClienteId] = useState("");
   const [formPlanoId, setFormPlanoId] = useState("");
   const [formDataInicio, setFormDataInicio] = useState("");
@@ -39,11 +37,21 @@ const ContratosPage: React.FC = () => {
   const [formCicloFaturamento, setFormCicloFaturamento] = useState<CicloFaturamento>("mensal");
   
   useEffect(() => {
-    // Atualiza valor quando um plano é selecionado
     if (formPlanoId) {
       const plano = getPlanoById(formPlanoId);
       if (plano) {
         setFormValorMensal(plano.valorMensal);
+        setFormTaxaImplantacao(plano.valorImplantacao);
+        
+        const hoje = new Date();
+        setFormDataInicio(formatToDateInput(hoje.getTime()));
+        
+        if (plano.semVencimento) {
+          setFormDataFim("");
+        } else if (plano.dataValidade) {
+          const dataFim = new Date(hoje.getTime() + (plano.dataValidade - Date.now()));
+          setFormDataFim(formatToDateInput(dataFim.getTime()));
+        }
       }
     }
   }, [formPlanoId]);
@@ -259,7 +267,8 @@ const ContratosPage: React.FC = () => {
                           id="dataFim" 
                           type="date"
                           value={formDataFim} 
-                          onChange={(e) => setFormDataFim(e.target.value)} 
+                          onChange={(e) => setFormDataFim(e.target.value)}
+                          disabled={formPlanoId && getPlanoById(formPlanoId)?.semVencimento}
                         />
                       </div>
                     </div>
@@ -422,7 +431,6 @@ const ContratosPage: React.FC = () => {
         </CardContent>
       </Card>
       
-      {/* Modal de Edição */}
       <Dialog open={openEditModal} onOpenChange={setOpenEditModal}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -489,7 +497,8 @@ const ContratosPage: React.FC = () => {
                     id="edit-dataFim" 
                     type="date"
                     value={formDataFim} 
-                    onChange={(e) => setFormDataFim(e.target.value)} 
+                    onChange={(e) => setFormDataFim(e.target.value)}
+                    disabled={formPlanoId && getPlanoById(formPlanoId)?.semVencimento}
                   />
                 </div>
               </div>
@@ -569,7 +578,6 @@ const ContratosPage: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Modal de Exclusão */}
       <Dialog open={openDeleteModal} onOpenChange={setOpenDeleteModal}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

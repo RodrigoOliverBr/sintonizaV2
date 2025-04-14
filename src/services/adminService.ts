@@ -494,8 +494,6 @@ export const gerarFaturasProgramadas = (contrato: Contrato): Fatura[] => {
   
   // Usar a data do primeiro vencimento como base
   const dataPrimeiroVencimento = new Date(contrato.dataPrimeiroVencimento || contrato.dataInicio);
-  const dataEmissao = new Date(dataPrimeiroVencimento);
-  dataEmissao.setDate(dataEmissao.getDate() - 15); // Emissão 15 dias antes do vencimento
   
   // Verificar faturas existentes para este contrato
   const faturasExistentes = faturas.filter(f => f.contratoId === contrato.id);
@@ -517,17 +515,17 @@ export const gerarFaturasProgramadas = (contrato: Contrato): Fatura[] => {
 
   // Gerar as faturas recorrentes
   for (let i = 0; i < quantidadeFaturas; i++) {
-    // Calcular data de vencimento baseada no ciclo
+    // Calcular data de vencimento baseada no ciclo e incrementando os meses corretamente
     const dataVencimento = new Date(dataPrimeiroVencimento);
     switch (contrato.cicloFaturamento) {
       case 'mensal':
-        dataVencimento.setMonth(dataVencimento.getMonth() + i);
+        dataVencimento.setMonth(dataPrimeiroVencimento.getMonth() + i);
         break;
       case 'trimestral':
-        dataVencimento.setMonth(dataVencimento.getMonth() + (i * 3));
+        dataVencimento.setMonth(dataPrimeiroVencimento.getMonth() + (i * 3));
         break;
       case 'anual':
-        dataVencimento.setFullYear(dataVencimento.getFullYear() + i);
+        dataVencimento.setFullYear(dataPrimeiroVencimento.getFullYear() + i);
         break;
     }
     

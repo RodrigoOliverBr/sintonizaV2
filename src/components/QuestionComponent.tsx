@@ -29,8 +29,8 @@ const QuestionComponent: React.FC<QuestionComponentProps> = ({
   const [isOpen, setIsOpen] = React.useState(false);
 
   return (
-    <Card className="mb-6 border-l-4" style={{ borderLeftColor: getSeverityColor(question.severity) }}>
-      <CardContent className="pt-6">
+    <Card className="mb-4 border-l-4" style={{ borderLeftColor: getSeverityColor(question.severity) }}>
+      <CardContent className="pt-6 pb-4">
         <div className="flex flex-col space-y-4">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-2">
             <div className="flex-1">

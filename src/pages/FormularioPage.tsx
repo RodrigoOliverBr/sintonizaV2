@@ -6,32 +6,87 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { FormData, FormResult, FormAnswer } from "@/types/form";
 import { formData as defaultFormData } from "@/data/formData";
-import { getFormResultByEmployeeId, saveFormResult } from "@/services/storageService";
+import { 
+  getFormResultByEmployeeId, 
+  saveFormResult,
+  getEmployees,
+  getCompanies,
+  getEmployeesByCompany
+} from "@/services/storageService";
+import { Employee, Company } from "@/types/cadastro";
 import { useNavigate } from "react-router-dom";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { SelectValue, SelectTrigger, SelectItem, SelectContent, Select } from "@/components/ui/select";
 import { getFormTemplateById, getFormTemplates, getDefaultFormTemplate } from "@/services/formTemplateService";
 import { FormTemplate } from "@/types/admin";
-
-const getClienteData = () => {
-  const clienteStr = localStorage.getItem("sintonia:currentCliente");
-  return clienteStr ? JSON.parse(clienteStr) : null;
-};
+import { X, Check, CheckSquare } from "lucide-react";
 
 const FormularioPage = () => {
-  const [currentSection, setCurrentSection] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, FormAnswer>>({});
+  // Estados para empresa, funcionário e formulário
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+  
+  // Estados para o formulário
   const [formTemplates, setFormTemplates] = useState<FormTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
   const [formData, setFormData] = useState<FormData>(defaultFormData);
+  const [answers, setAnswers] = useState<Record<number, FormAnswer>>({});
+  const [showForm, setShowForm] = useState<boolean>(false);
+  
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Carregar formulários e resultados salvos
+  // Carregar empresas ao iniciar
   useEffect(() => {
+    loadCompanies();
     loadFormTemplates();
   }, []);
   
+  // Carregar funcionários quando uma empresa for selecionada
+  useEffect(() => {
+    if (selectedCompanyId) {
+      loadEmployees(selectedCompanyId);
+    }
+  }, [selectedCompanyId]);
+  
+  // Carregar respostas quando funcionário for selecionado
+  useEffect(() => {
+    if (selectedEmployeeId && selectedTemplate) {
+      loadEmployeeAnswers(selectedEmployeeId, selectedTemplate.id);
+    }
+  }, [selectedEmployeeId, selectedTemplate]);
+
+  const loadCompanies = () => {
+    try {
+      const loadedCompanies = getCompanies();
+      setCompanies(loadedCompanies || []);
+    } catch (error) {
+      console.error("Erro ao carregar empresas:", error);
+      toast({
+        title: "Erro ao carregar empresas",
+        description: "Não foi possível carregar a lista de empresas.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadEmployees = (companyId: string) => {
+    try {
+      const loadedEmployees = getEmployeesByCompany(companyId);
+      setEmployees(loadedEmployees || []);
+      setSelectedEmployeeId(""); // Resetar seleção de funcionário ao mudar empresa
+    } catch (error) {
+      console.error("Erro ao carregar funcionários:", error);
+      toast({
+        title: "Erro ao carregar funcionários",
+        description: "Não foi possível carregar a lista de funcionários.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const loadFormTemplates = () => {
     try {
       const clienteData = getClienteData();
@@ -63,7 +118,26 @@ const FormularioPage = () => {
       });
     }
   };
+
+  const loadEmployeeAnswers = (employeeId: string, templateId: string) => {
+    try {
+      const savedResult = getFormResultByEmployeeId(employeeId, templateId);
+      if (savedResult) {
+        setAnswers(savedResult.answers);
+      } else {
+        // Se não houver resultados salvos, limpar as respostas
+        setAnswers({});
+      }
+    } catch (error) {
+      console.error("Erro ao carregar respostas:", error);
+    }
+  };
   
+  const getClienteData = () => {
+    const clienteStr = localStorage.getItem("sintonia:currentCliente");
+    return clienteStr ? JSON.parse(clienteStr) : null;
+  };
+
   const handleSelectTemplate = (templateId: string) => {
     try {
       const template = getFormTemplateById(templateId);
@@ -83,19 +157,9 @@ const FormularioPage = () => {
         sections: template.secoes
       });
       
-      // Resetar navegação para a primeira seção
-      setCurrentSection(0);
-      
-      // Carregar respostas salvas para este formulário, se houver
-      const employeeId = localStorage.getItem("currentEmployeeId");
-      if (employeeId) {
-        const savedResult = getFormResultByEmployeeId(employeeId, template.id);
-        if (savedResult) {
-          setAnswers(savedResult.answers);
-        } else {
-          // Se não houver resultados salvos para este formulário, limpar as respostas
-          setAnswers({});
-        }
+      // Se já tiver um funcionário selecionado, carregar suas respostas
+      if (selectedEmployeeId) {
+        loadEmployeeAnswers(selectedEmployeeId, template.id);
       }
     } catch (error) {
       console.error("Erro ao selecionar formulário:", error);
@@ -105,6 +169,44 @@ const FormularioPage = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleCompanyChange = (companyId: string) => {
+    setSelectedCompanyId(companyId);
+  };
+
+  const handleEmployeeChange = (employeeId: string) => {
+    setSelectedEmployeeId(employeeId);
+    
+    // Armazenar o ID do funcionário no localStorage para uso em outras páginas
+    localStorage.setItem("currentEmployeeId", employeeId);
+    
+    // Se já tiver um template selecionado, carregar as respostas do funcionário
+    if (selectedTemplate) {
+      loadEmployeeAnswers(employeeId, selectedTemplate.id);
+    }
+  };
+
+  const handleStartForm = () => {
+    if (!selectedEmployeeId) {
+      toast({
+        title: "Selecione um funcionário",
+        description: "É necessário selecionar um funcionário antes de iniciar o formulário.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!selectedTemplate) {
+      toast({
+        title: "Formulário não selecionado",
+        description: "É necessário selecionar um formulário para continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setShowForm(true);
   };
 
   const handleAnswerChange = (questionId: number, value: boolean | null) => {
@@ -141,18 +243,25 @@ const FormularioPage = () => {
     });
   };
 
-  const handleNext = () => {
-    if (currentSection < formData.sections.length - 1) {
-      setCurrentSection(currentSection + 1);
-    } else {
-      handleFinish();
-    }
-  };
-
-  const handleBack = () => {
-    if (currentSection > 0) {
-      setCurrentSection(currentSection - 1);
-    }
+  const handleMarkAllAsNo = () => {
+    const allQuestions = formData.sections.flatMap(section => section.questions);
+    const newAnswers: Record<number, FormAnswer> = {};
+    
+    allQuestions.forEach(question => {
+      newAnswers[question.id] = {
+        questionId: question.id,
+        answer: false,
+        observation: answers[question.id]?.observation || "",
+        selectedOptions: []
+      };
+    });
+    
+    setAnswers(newAnswers);
+    
+    toast({
+      title: "Todas as respostas definidas como 'Não'",
+      description: "Todas as perguntas foram marcadas com 'Não'.",
+    });
   };
 
   const handleFinish = () => {
@@ -216,9 +325,8 @@ const FormularioPage = () => {
       };
 
       // Salvar o resultado no localStorage
-      const employeeId = localStorage.getItem("currentEmployeeId");
-      if (employeeId) {
-        saveFormResult(employeeId, result, selectedTemplate.id);
+      if (selectedEmployeeId) {
+        saveFormResult(selectedEmployeeId, result, selectedTemplate.id);
         
         toast({
           title: "Formulário enviado com sucesso!",
@@ -243,69 +351,131 @@ const FormularioPage = () => {
     }
   };
 
-  const currentSectionData = formData.sections[currentSection];
-  const progress = ((currentSection + 1) / formData.sections.length) * 100;
-
   return (
     <Layout>
       <div className="container mx-auto p-4 max-w-4xl">
         <h1 className="text-2xl font-bold mb-6">Formulário de Avaliação de Riscos Psicossociais</h1>
         
-        {/* Seletor de formulário */}
-        {formTemplates.length > 1 && (
-          <Card className="p-4 mb-6">
-            <label className="block text-sm font-medium mb-2">Selecione o formulário:</label>
-            <Select
-              value={selectedTemplate?.id}
-              onValueChange={handleSelectTemplate}
-            >
-              <SelectTrigger className="w-full md:w-1/2">
-                <SelectValue placeholder="Selecione um formulário" />
-              </SelectTrigger>
-              <SelectContent>
-                {formTemplates.map((template) => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedTemplate && (
-              <p className="mt-2 text-sm text-muted-foreground">{selectedTemplate.descricao}</p>
-            )}
+        {/* Seleção de empresa e funcionário */}
+        {!showForm && (
+          <Card className="mb-6">
+            <CardContent className="pt-6">
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Empresa:</label>
+                  <Select
+                    value={selectedCompanyId}
+                    onValueChange={handleCompanyChange}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione uma empresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {selectedCompanyId && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Funcionário:</label>
+                    <Select
+                      value={selectedEmployeeId}
+                      onValueChange={handleEmployeeChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecione um funcionário" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees.map((employee) => (
+                          <SelectItem key={employee.id} value={employee.id}>
+                            {employee.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                {/* Seletor de formulário */}
+                {formTemplates.length > 1 && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Formulário:</label>
+                    <Select
+                      value={selectedTemplate?.id}
+                      onValueChange={handleSelectTemplate}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecione um formulário" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {formTemplates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedTemplate && (
+                      <p className="mt-2 text-sm text-muted-foreground">{selectedTemplate.descricao}</p>
+                    )}
+                  </div>
+                )}
+                
+                <div className="flex justify-end">
+                  <Button onClick={handleStartForm}>
+                    Iniciar Formulário
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
           </Card>
         )}
         
-        {selectedTemplate && (
+        {/* Formulário */}
+        {showForm && selectedTemplate && (
           <>
-            <div className="bg-muted h-2 w-full rounded-full mb-6">
-              <div
-                className="bg-primary h-2 rounded-full transition-all"
-                style={{ width: `${progress}%` }}
-              ></div>
-              <div className="text-xs text-center mt-1">
-                Seção {currentSection + 1} de {formData.sections.length}
+            <div className="mb-6 flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-medium">
+                  Funcionário: {employees.find(e => e.id === selectedEmployeeId)?.name}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Formulário: {selectedTemplate.nome}
+                </p>
               </div>
-            </div>
-
-            <FormSection
-              section={currentSectionData}
-              answers={answers}
-              onAnswerChange={handleAnswerChange}
-              onObservationChange={handleObservationChange}
-              onOptionsChange={handleOptionsChange}
-            />
-
-            <div className="mt-8 flex justify-between">
-              <Button
-                variant="outline"
-                onClick={handleBack}
-                disabled={currentSection === 0}
+              
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2" 
+                onClick={handleMarkAllAsNo}
               >
-                Voltar
+                <CheckSquare className="h-4 w-4" />
+                Marcar todas como "Não"
               </Button>
-              <Button onClick={handleNext}>
-                {currentSection < formData.sections.length - 1 ? "Próximo" : "Finalizar"}
+            </div>
+            
+            {/* Exibir todas as seções de uma vez */}
+            <div className="space-y-6">
+              {formData.sections.map((section, index) => (
+                <FormSection
+                  key={index}
+                  section={section}
+                  answers={answers}
+                  onAnswerChange={handleAnswerChange}
+                  onObservationChange={handleObservationChange}
+                  onOptionsChange={handleOptionsChange}
+                />
+              ))}
+            </div>
+            
+            <div className="mt-8 flex justify-end">
+              <Button onClick={handleFinish}>
+                Finalizar
               </Button>
             </div>
           </>

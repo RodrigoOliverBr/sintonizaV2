@@ -19,10 +19,13 @@ const FormSection: React.FC<FormSectionProps> = ({
   onObservationChange,
   onOptionsChange,
 }) => {
+  // Usar um ID único para o accordion baseado no título da seção
+  const sectionId = section.title.toLowerCase().replace(/\s+/g, '-');
+  
   return (
-    <div className="mb-8">
-      <Accordion type="single" collapsible defaultValue="item-1">
-        <AccordionItem value="item-1" className="border-none">
+    <div className="mb-6">
+      <Accordion type="single" collapsible defaultValue={`item-${sectionId}`}>
+        <AccordionItem value={`item-${sectionId}`} className="border-none">
           <AccordionTrigger className="py-4 bg-esocial-lightGray hover:bg-esocial-lightGray/80 px-4 rounded-lg text-esocial-darkGray">
             <h2 className="text-lg font-medium">{section.title}</h2>
           </AccordionTrigger>

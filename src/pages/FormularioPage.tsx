@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import FormSection from "@/components/FormSection";
@@ -277,15 +276,16 @@ const FormularioPage = () => {
 
       const allQuestions = formData.sections.flatMap((section) => section.questions);
 
-      // Verificar se todas as perguntas foram respondidas
-      const unansweredQuestions = allQuestions.filter(
-        (q) => answers[q.id]?.answer === null || answers[q.id]?.answer === undefined
+      // Count answered questions
+      const answeredQuestions = Object.values(answers).filter(
+        (a) => a.answer === true || a.answer === false
       );
 
-      if (unansweredQuestions.length > 0) {
+      // Check if there are unanswered questions
+      if (answeredQuestions.length < allQuestions.length) {
         toast({
           title: "Formulário incompleto",
-          description: `Faltam ${unansweredQuestions.length} perguntas a serem respondidas.`,
+          description: `Faltam ${allQuestions.length - answeredQuestions.length} perguntas a serem respondidas.`,
           variant: "destructive",
         });
         return;
@@ -325,7 +325,7 @@ const FormularioPage = () => {
       };
 
       // Salvar o resultado no localStorage
-      if (selectedEmployeeId) {
+      if (selectedEmployeeId && selectedTemplate) {
         saveFormResult(selectedEmployeeId, result, selectedTemplate.id);
         
         toast({

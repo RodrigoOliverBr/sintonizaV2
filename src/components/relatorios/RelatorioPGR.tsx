@@ -24,7 +24,7 @@ interface RelatorioPGRProps {
 }
 
 // Status possíveis para as ações
-type ActionStatus = 'pending' | 'monitoring' | 'implementing' | 'resolved';
+type ActionStatus = 'pending' | 'in-progress' | 'completed';
 
 // Interface para representar um risco no PGR
 interface RiscoItem {
@@ -33,7 +33,7 @@ interface RiscoItem {
   descricao: string;
   nivelRisco: number;
   status: ActionStatus;
-  probabilidade: 'baixa' | 'média' | 'alta';
+  percentualSim: number;
   severidade: SeverityLevel;
   funcoes: string[];
   medidasControle: string[];
@@ -57,12 +57,23 @@ export default function RelatorioPGR({
   // Estado para armazenar o prazo selecionado para cada risco
   const [prazos, setPrazos] = useState<Record<string, string>>({});
   
+  // Estado para armazenar o status para cada risco
+  const [status, setStatus] = useState<Record<string, ActionStatus>>({});
+  
   // Estado para armazenar as medidas de controle editáveis
   const [medidasControle, setMedidasControle] = useState<Record<string, string[]>>({});
   
   // Função para atualizar o responsável de um risco específico
   const handleResponsavelChange = (riscoId: string, value: string) => {
     setResponsaveis(prev => ({
+      ...prev,
+      [riscoId]: value
+    }));
+  };
+  
+  // Função para atualizar o status de um risco
+  const handleStatusChange = (riscoId: string, value: ActionStatus) => {
+    setStatus(prev => ({
       ...prev,
       [riscoId]: value
     }));
@@ -94,6 +105,13 @@ export default function RelatorioPGR({
     { value: "9 meses", label: "9 meses" },
     { value: "12 meses", label: "12 meses" },
   ];
+
+  // Opções de status
+  const statusOptions = [
+    { value: "pending", label: "Aguardando Início" },
+    { value: "in-progress", label: "Em Andamento" },
+    { value: "completed", label: "Concluído" },
+  ];
   
   // Dados simulados de riscos psicossociais para o PGR
   const riscos: RiscoItem[] = [
@@ -102,8 +120,8 @@ export default function RelatorioPGR({
       risco: "Sobrecarga de trabalho",
       descricao: "Excesso de demandas, prazos exíguos e pressão por resultados",
       nivelRisco: 75,
-      status: 'implementing',
-      probabilidade: 'alta',
+      status: 'in-progress',
+      percentualSim: 75,
       severidade: 'PREJUDICIAL',
       funcoes: ['Desenvolvedores', 'Analistas', 'Gerentes de Projetos'],
       medidasControle: [
@@ -121,8 +139,8 @@ export default function RelatorioPGR({
       risco: "Falta de Clareza nas Atribuições",
       descricao: "Empregados sem orientações claras sobre suas responsabilidades e atribuições",
       nivelRisco: 68,
-      status: 'monitoring',
-      probabilidade: 'média',
+      status: 'pending',
+      percentualSim: 68,
       severidade: 'LEVEMENTE PREJUDICIAL',
       funcoes: ['Administrativo', 'Suporte', 'Novos Funcionários'],
       medidasControle: [
@@ -140,7 +158,7 @@ export default function RelatorioPGR({
       descricao: "Expressões ou atitudes que fazem os empregados se sentirem desrespeitados ou desvalorizados",
       nivelRisco: 55,
       status: 'pending',
-      probabilidade: 'média',
+      percentualSim: 55,
       severidade: 'PREJUDICIAL',
       funcoes: ['Atendimento', 'Operacional', 'Suporte'],
       medidasControle: [
@@ -157,8 +175,8 @@ export default function RelatorioPGR({
       risco: "Assédio Moral e Sexual",
       descricao: "Situações de assédio moral ou sexual dentro da empresa",
       nivelRisco: 40,
-      status: 'resolved',
-      probabilidade: 'baixa',
+      status: 'completed',
+      percentualSim: 40,
       severidade: 'EXTREMAMENTE PREJUDICIAL',
       funcoes: ['Todos os Funcionários'],
       medidasControle: [
@@ -175,14 +193,11 @@ export default function RelatorioPGR({
   // Ordenar riscos por nível (do mais grave ao menos grave)
   const riscosSorted = [...riscos].sort((a, b) => b.nivelRisco - a.nivelRisco);
   
-  // Função para obter a cor de fundo com base na probabilidade
-  const getProbabilidadeBadgeClass = (prob: string) => {
-    switch (prob.toLowerCase()) {
-      case 'alta': return "bg-red-100 text-red-800 border-red-200";
-      case 'média': return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case 'baixa': return "bg-green-100 text-green-800 border-green-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
-    }
+  // Função para obter a cor de fundo com base na porcentagem
+  const getPercentualBadgeClass = (percent: number) => {
+    if (percent >= 70) return "bg-red-100 text-red-800 border-red-200";
+    if (percent >= 50) return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    return "bg-green-100 text-green-800 border-green-200";
   };
   
   // Função para obter a cor de fundo com base na severidade
@@ -196,24 +211,12 @@ export default function RelatorioPGR({
   };
   
   // Função para obter a cor e ícone do status
-  const getStatusBadgeClass = (status: ActionStatus) => {
+  const getStatusLabel = (status: ActionStatus) => {
     switch (status) {
-      case 'implementing': return {
-        class: "bg-yellow-100 text-yellow-800 border-yellow-200",
-        label: "Implementando"
-      };
-      case 'monitoring': return {
-        class: "bg-blue-100 text-blue-800 border-blue-200",
-        label: "Monitorando"
-      };
-      case 'pending': return {
-        class: "bg-gray-100 text-gray-800 border-gray-200",
-        label: "Pendente"
-      };
-      case 'resolved': return {
-        class: "bg-green-100 text-green-800 border-green-200",
-        label: "Resolvido"
-      };
+      case 'in-progress': return "Em Andamento";
+      case 'pending': return "Aguardando Início";
+      case 'completed': return "Concluído";
+      default: return "Desconhecido";
     }
   };
   
@@ -309,11 +312,11 @@ export default function RelatorioPGR({
               
               <div className="mt-6">
                 <h4 className="text-sm font-semibold mb-3">Análise de Risco:</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border rounded-lg p-4 flex flex-col items-center justify-center">
-                    <p className="text-gray-500 mb-2">Probabilidade</p>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getProbabilidadeBadgeClass(risco.probabilidade)}`}>
-                      {risco.probabilidade.charAt(0).toUpperCase() + risco.probabilidade.slice(1)}
+                    <p className="text-gray-500 mb-2">Percentual de Respostas "Sim"</p>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPercentualBadgeClass(risco.percentualSim)}`}>
+                      {risco.percentualSim}%
                     </span>
                   </div>
                   
@@ -322,13 +325,6 @@ export default function RelatorioPGR({
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getSeveridadeBadgeClass(risco.severidade)}`}>
                       {risco.severidade === 'EXTREMAMENTE PREJUDICIAL' ? 'Alta' : 
                        risco.severidade === 'PREJUDICIAL' ? 'Média' : 'Baixa'}
-                    </span>
-                  </div>
-                  
-                  <div className="border rounded-lg p-4 flex flex-col items-center justify-center">
-                    <p className="text-gray-500 mb-2">Status Atual</p>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeClass(risco.status).class}`}>
-                      {getStatusBadgeClass(risco.status).label}
                     </span>
                   </div>
                 </div>
@@ -344,7 +340,7 @@ export default function RelatorioPGR({
                 />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                 <div>
                   <h4 className="text-sm font-semibold mb-2 flex items-center">
                     <Clock className="h-4 w-4 mr-1 text-gray-500" />
@@ -375,6 +371,25 @@ export default function RelatorioPGR({
                     placeholder="Adicionar responsáveis"
                     className="w-full"
                   />
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">Status:</h4>
+                  <Select 
+                    value={status[risco.id] || risco.status}
+                    onValueChange={(value: ActionStatus) => handleStatusChange(risco.id, value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>

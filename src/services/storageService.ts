@@ -1,5 +1,5 @@
 import { Company, Department, Employee, JobRole } from "@/types/cadastro";
-import { FormResult, StoredFormResult } from "@/types/form";
+import { FormResult } from "@/types/form";
 import { formData } from "@/data/formData";
 
 // Keys for localStorage

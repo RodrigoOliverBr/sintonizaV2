@@ -1,4 +1,4 @@
-import { Cliente, Plano, Contrato, Fatura, StatusFatura, CicloFaturamento } from "@/types/admin";
+import { Cliente, Plano, Contrato, Fatura, StatusFatura, CicloFaturamento, TipoPessoa, ClienteStatus } from "@/types/admin";
 
 // Keys de localStorage
 const CLIENTES_KEY = "sintonia:clientes";

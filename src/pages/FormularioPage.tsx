@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import FormSection from "@/components/FormSection";
@@ -10,7 +11,8 @@ import {
   saveFormResult,
   getEmployees,
   getCompanies,
-  getEmployeesByCompany
+  getEmployeesByCompany,
+  getFormStatusByEmployeeId
 } from "@/services/storageService";
 import { Employee, Company } from "@/types/cadastro";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +20,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SelectValue, SelectTrigger, SelectItem, SelectContent, Select } from "@/components/ui/select";
 import { getFormTemplateById, getFormTemplates, getDefaultFormTemplate } from "@/services/formTemplateService";
 import { FormTemplate } from "@/types/admin";
-import { X, Check, CheckSquare } from "lucide-react";
+import { X, Check, CheckSquare, FileText, Edit } from "lucide-react";
+import FormResultSummary from "@/components/FormResultSummary";
 
 const FormularioPage = () => {
   // Estados para empresa, funcionário e formulário
@@ -33,6 +36,9 @@ const FormularioPage = () => {
   const [formData, setFormData] = useState<FormData>(defaultFormData);
   const [answers, setAnswers] = useState<Record<number, FormAnswer>>({});
   const [showForm, setShowForm] = useState<boolean>(false);
+  const [showResults, setShowResults] = useState<boolean>(false);
+  const [formStatus, setFormStatus] = useState<'not-started' | 'in-progress' | 'completed'>('not-started');
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -54,6 +60,11 @@ const FormularioPage = () => {
   useEffect(() => {
     if (selectedEmployeeId && selectedTemplate) {
       loadEmployeeAnswers(selectedEmployeeId, selectedTemplate.id);
+      const foundEmployee = employees.find(e => e.id === selectedEmployeeId);
+      setSelectedEmployee(foundEmployee || null);
+      
+      const status = getFormStatusByEmployeeId(selectedEmployeeId, selectedTemplate.id);
+      setFormStatus(status);
     }
   }, [selectedEmployeeId, selectedTemplate]);
 
@@ -159,6 +170,8 @@ const FormularioPage = () => {
       // Se já tiver um funcionário selecionado, carregar suas respostas
       if (selectedEmployeeId) {
         loadEmployeeAnswers(selectedEmployeeId, template.id);
+        const status = getFormStatusByEmployeeId(selectedEmployeeId, template.id);
+        setFormStatus(status);
       }
     } catch (error) {
       console.error("Erro ao selecionar formulário:", error);
@@ -183,7 +196,13 @@ const FormularioPage = () => {
     // Se já tiver um template selecionado, carregar as respostas do funcionário
     if (selectedTemplate) {
       loadEmployeeAnswers(employeeId, selectedTemplate.id);
+      const status = getFormStatusByEmployeeId(employeeId, selectedTemplate.id);
+      setFormStatus(status);
     }
+    
+    // Reset view states
+    setShowForm(false);
+    setShowResults(false);
   };
 
   const handleStartForm = () => {
@@ -206,6 +225,26 @@ const FormularioPage = () => {
     }
     
     setShowForm(true);
+    setShowResults(false);
+  };
+  
+  const handleViewResults = () => {
+    if (!selectedEmployeeId || !selectedTemplate) {
+      toast({
+        title: "Selecione um funcionário e um formulário",
+        description: "É necessário selecionar um funcionário e um formulário para visualizar os resultados.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setShowForm(false);
+    setShowResults(true);
+  };
+  
+  const handleNewForm = () => {
+    setShowForm(false);
+    setShowResults(false);
   };
 
   const handleAnswerChange = (questionId: number, value: boolean | null) => {
@@ -333,7 +372,12 @@ const FormularioPage = () => {
           description: "Suas respostas foram salvas.",
         });
         
-        navigate("/relatorios");
+        // Atualizar status do formulário
+        setFormStatus('completed');
+        
+        // Mostrar resultados
+        setShowForm(false);
+        setShowResults(true);
       } else {
         toast({
           title: "Erro ao salvar respostas",
@@ -350,6 +394,19 @@ const FormularioPage = () => {
       });
     }
   };
+  
+  const getStatusComponent = () => {
+    switch (formStatus) {
+      case 'not-started':
+        return <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">Não iniciado</span>;
+      case 'in-progress':
+        return <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Em progresso</span>;
+      case 'completed':
+        return <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">Completo</span>;
+      default:
+        return null;
+    }
+  };
 
   return (
     <Layout>
@@ -357,7 +414,7 @@ const FormularioPage = () => {
         <h1 className="text-2xl font-bold mb-6">Formulário de Avaliação de Riscos Psicossociais</h1>
         
         {/* Seleção de empresa e funcionário */}
-        {!showForm && (
+        {!showForm && !showResults && (
           <Card className="mb-6">
             <CardContent className="pt-6">
               <div className="space-y-6">
@@ -426,11 +483,37 @@ const FormularioPage = () => {
                   </div>
                 )}
                 
-                <div className="flex justify-end">
-                  <Button onClick={handleStartForm}>
-                    Iniciar Formulário
-                  </Button>
-                </div>
+                {selectedEmployeeId && selectedTemplate && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">Status:</span>
+                      {getStatusComponent()}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      {formStatus === 'completed' && (
+                        <Button 
+                          onClick={handleViewResults} 
+                          variant="outline" 
+                          className="flex items-center gap-2"
+                        >
+                          <FileText className="h-4 w-4" />
+                          Ver Resultados
+                        </Button>
+                      )}
+                      
+                      <Button onClick={handleStartForm}>
+                        {formStatus === 'not-started' ? (
+                          <>Iniciar Formulário</>
+                        ) : formStatus === 'in-progress' ? (
+                          <>Continuar Preenchimento</>
+                        ) : (
+                          <>Preencher Novamente</>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -474,10 +557,49 @@ const FormularioPage = () => {
             </div>
             
             <div className="mt-8 flex justify-end">
-              <Button onClick={handleFinish}>
+              <Button onClick={handleFinish} className="flex items-center gap-2">
+                <Check className="h-4 w-4" />
                 Finalizar
               </Button>
             </div>
+          </>
+        )}
+        
+        {/* Visualização dos resultados */}
+        {showResults && selectedEmployeeId && selectedTemplate && selectedEmployee && (
+          <>
+            <div className="mb-6 flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-medium">
+                  Resultados: {selectedEmployee.name}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Formulário: {selectedTemplate.nome}
+                </p>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleNewForm}>
+                  Voltar
+                </Button>
+                <Button 
+                  onClick={handleStartForm} 
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Editar Respostas
+                </Button>
+              </div>
+            </div>
+            
+            {/* Componente de resumo dos resultados */}
+            {getFormResultByEmployeeId(selectedEmployeeId, selectedTemplate.id) && (
+              <FormResultSummary 
+                result={getFormResultByEmployeeId(selectedEmployeeId, selectedTemplate.id)!}
+                employee={selectedEmployee}
+              />
+            )}
           </>
         )}
       </div>

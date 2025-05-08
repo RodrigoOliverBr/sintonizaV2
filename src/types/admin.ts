@@ -20,6 +20,7 @@ export interface Cliente {
   estado: string;
   cep: string;
   contato: string;
+  formulariosIds?: string[]; // IDs dos formulários disponíveis para este cliente
 }
 
 export interface Plano {
@@ -69,4 +70,16 @@ export interface Fatura {
 // Interface para estado de seleção em lote
 export interface BatchSelection {
   [key: string]: boolean;
+}
+
+// Nova interface para modelos de formulário
+export interface FormTemplate {
+  id: string;
+  nome: string;
+  descricao: string;
+  dataCriacao: number; // timestamp
+  ultimaAtualizacao: number; // timestamp
+  ativo: boolean;
+  padrao: boolean; // se é o formulário padrão
+  secoes: FormSection[];
 }

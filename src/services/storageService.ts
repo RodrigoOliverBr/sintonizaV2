@@ -226,24 +226,54 @@ export const getCompanyById = (id: string): Company | undefined => {
 };
 
 // Form Results
-export const getFormResults = (): StoredFormResult[] => {
+export type StoredFormResult = FormResult & {
+  employeeId: string;
+  lastUpdated: number; // timestamp
+  isComplete: boolean;
+  formTemplateId: string; // ID do formulário usado
+};
+
+export const getFormResults = (formTemplateId?: string): StoredFormResult[] => {
   const results = localStorage.getItem(FORM_RESULTS_KEY);
   if (!results) {
     return [];
   }
-  return JSON.parse(results);
+  
+  const allResults: StoredFormResult[] = JSON.parse(results);
+  
+  // Se não passou ID de formulário, retorna todos
+  if (!formTemplateId) {
+    return allResults;
+  }
+  
+  // Filtrar por ID do formulário
+  return allResults.filter(r => r.formTemplateId === formTemplateId);
 };
 
-export const getFormResultByEmployeeId = (employeeId: string): StoredFormResult | undefined => {
+export const getFormResultByEmployeeId = (
+  employeeId: string, 
+  formTemplateId: string = "istas21-br"
+): StoredFormResult | undefined => {
   const results = getFormResults();
-  return results.find(r => r.employeeId === employeeId);
+  return results.find(r => r.employeeId === employeeId && r.formTemplateId === formTemplateId);
 };
 
-export const saveFormResult = (employeeId: string, result: FormResult): StoredFormResult => {
+export const saveFormResult = (
+  employeeId: string, 
+  result: FormResult, 
+  formTemplateId: string = "istas21-br"
+): StoredFormResult => {
   const results = getFormResults();
   
-  // Calculate if the form is complete
-  const allQuestions = formData.sections.flatMap(section => section.questions);
+  // Buscar o formulário para calcular se está completo
+  const { getFormTemplateById } = require('./formTemplateService');
+  const formTemplate = getFormTemplateById(formTemplateId);
+  
+  // Se não encontrar o formulário, usa o padrão
+  const allQuestions = formTemplate 
+    ? formTemplate.secoes.flatMap(section => section.questions) 
+    : formData.sections.flatMap(section => section.questions);
+    
   const totalQuestions = allQuestions.length;
   const answeredQuestions = Object.values(result.answers).filter(a => a.answer !== null).length;
   const isComplete = answeredQuestions === totalQuestions;
@@ -252,11 +282,15 @@ export const saveFormResult = (employeeId: string, result: FormResult): StoredFo
     ...result,
     employeeId,
     lastUpdated: Date.now(),
-    isComplete
+    isComplete,
+    formTemplateId
   };
   
-  // Update existing or add new
-  const existingIndex = results.findIndex(r => r.employeeId === employeeId);
+  // Atualizar existente ou adicionar novo
+  const existingIndex = results.findIndex(
+    r => r.employeeId === employeeId && r.formTemplateId === formTemplateId
+  );
+  
   if (existingIndex >= 0) {
     results[existingIndex] = newResult;
   } else {
@@ -267,8 +301,11 @@ export const saveFormResult = (employeeId: string, result: FormResult): StoredFo
   return newResult;
 };
 
-export const getFormStatusByEmployeeId = (employeeId: string): 'not-started' | 'in-progress' | 'completed' => {
-  const result = getFormResultByEmployeeId(employeeId);
+export const getFormStatusByEmployeeId = (
+  employeeId: string,
+  formTemplateId: string = "istas21-br"
+): 'not-started' | 'in-progress' | 'completed' => {
+  const result = getFormResultByEmployeeId(employeeId, formTemplateId);
   
   if (!result) {
     return 'not-started';
@@ -281,13 +318,23 @@ export const getFormStatusByEmployeeId = (employeeId: string): 'not-started' | '
   return 'in-progress';
 };
 
+export const deleteFormResultsByEmployeeIdAndFormId = (
+  employeeId: string, 
+  formTemplateId: string
+): void => {
+  const results = getFormResults();
+  const filteredResults = results.filter(
+    r => !(r.employeeId === employeeId && r.formTemplateId === formTemplateId)
+  );
+  localStorage.setItem(FORM_RESULTS_KEY, JSON.stringify(filteredResults));
+};
+
 export const deleteFormResultsByEmployeeId = (employeeId: string): void => {
   const results = getFormResults();
   const filteredResults = results.filter(r => r.employeeId !== employeeId);
   localStorage.setItem(FORM_RESULTS_KEY, JSON.stringify(filteredResults));
 };
 
-// Keep only this enhanced version of deleteEmployee that also removes form results
 export const deleteEmployee = (id: string): void => {
   const employees = getEmployees();
   const filteredEmployees = employees.filter(e => e.id !== id);

@@ -1,518 +1,289 @@
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { getJobRoles, getCompanies, getEmployeesByCompany, getEmployees, getFormResultByEmployeeId, saveFormResult } from "@/services/storageService";
 import Layout from "@/components/Layout";
-import { Button } from "@/components/ui/button";
-import { FormAnswer, FormResult } from "@/types/form";
-import { formData } from "@/data/formData";
 import FormSection from "@/components/FormSection";
-import FormResults from "@/components/FormResults";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
+import { FormData, FormResult } from "@/types/form";
+import { formData as defaultFormData } from "@/data/formData";
+import { getFormResultByEmployeeId, saveFormResult } from "@/services/storageService";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { Company, Employee, JobRole } from "@/types/cadastro";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, ArrowLeft } from "lucide-react";
-import NewEmployeeModal from "@/components/modals/NewEmployeeModal";
-import { useToast } from "@/hooks/use-toast";
+import { SelectValue, SelectTrigger, SelectItem, SelectContent, Select } from "@/components/ui/select";
+import { getFormTemplateById, getFormTemplates, getDefaultFormTemplate } from "@/services/formTemplateService";
+import { FormTemplate } from "@/types/admin";
 
-const FormularioPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const employeeIdFromUrl = searchParams.get('employeeId');
-  
+const getClienteData = () => {
+  const clienteStr = localStorage.getItem("sintonia:currentCliente");
+  return clienteStr ? JSON.parse(clienteStr) : null;
+};
+
+const FormularioPage = () => {
+  const [currentSection, setCurrentSection] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, { answer: boolean | null; observation?: string; selectedOptions?: string[] }>>({});
+  const [formTemplates, setFormTemplates] = useState<FormTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
+  const [formData, setFormData] = useState<FormData>(defaultFormData);
   const { toast } = useToast();
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-  const [isNewEmployeeModalOpen, setIsNewEmployeeModalOpen] = useState(false);
-  const [isEditingExistingResponses, setIsEditingExistingResponses] = useState(false);
+  const navigate = useNavigate();
   
-  const [jobRoles, setJobRoles] = useState<JobRole[]>([]);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [formAnswers, setFormAnswers] = useState<Record<number, FormAnswer>>({});
-  const [showResults, setShowResults] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [formResult, setFormResult] = useState<FormResult>({
-    answers: {},
-    totalYes: 0,
-    totalNo: 0,
-    severityCounts: {
-      "LEVEMENTE PREJUDICIAL": 0,
-      "PREJUDICIAL": 0,
-      "EXTREMAMENTE PREJUDICIAL": 0,
-    },
-    yesPerSeverity: {
-      "LEVEMENTE PREJUDICIAL": 0,
-      "PREJUDICIAL": 0,
-      "EXTREMAMENTE PREJUDICIAL": 0,
-    },
-    analyistNotes: ""
-  });
-
-  // Load companies and job roles on component mount
+  // Carregar formulários e resultados salvos
   useEffect(() => {
-    const loadedCompanies = getCompanies();
-    setCompanies(loadedCompanies);
-    setJobRoles(getJobRoles());
-
-    // Load employee from URL param if present
-    if (employeeIdFromUrl) {
-      const allEmployees = getEmployees();
-      const employee = allEmployees.find(e => e.id === employeeIdFromUrl);
+    loadFormTemplates();
+  }, []);
+  
+  const loadFormTemplates = () => {
+    try {
+      const clienteData = getClienteData();
+      let availableTemplates: FormTemplate[] = [];
       
-      if (employee) {
-        setSelectedCompanyId(employee.companyId);
-        setSelectedEmployeeId(employeeIdFromUrl);
-        setSelectedEmployee(employee);
-        setIsEditingExistingResponses(true);
-        
-        // Load existing form responses
-        const existingResult = getFormResultByEmployeeId(employeeIdFromUrl);
-        if (existingResult) {
-          setFormAnswers(existingResult.answers);
-          setFormResult({
-            answers: existingResult.answers,
-            totalYes: existingResult.totalYes,
-            totalNo: existingResult.totalNo,
-            severityCounts: existingResult.severityCounts,
-            yesPerSeverity: existingResult.yesPerSeverity,
-            analyistNotes: existingResult.analyistNotes
-          });
-          setShowForm(true);
-          // If form is complete, show results directly
-          if (existingResult.isComplete) {
-            setShowResults(true);
-          }
+      if (clienteData && clienteData.formulariosIds && clienteData.formulariosIds.length > 0) {
+        // Carregar formulários disponíveis para o cliente
+        availableTemplates = getFormTemplates().filter(
+          template => clienteData.formulariosIds.includes(template.id) && template.ativo
+        );
+      } else {
+        // Se não tiver formulários associados, usar apenas o padrão
+        const defaultTemplate = getDefaultFormTemplate();
+        availableTemplates = [defaultTemplate];
+      }
+      
+      setFormTemplates(availableTemplates);
+      
+      if (availableTemplates.length > 0) {
+        // Por padrão, selecionar o primeiro formulário disponível
+        handleSelectTemplate(availableTemplates[0].id);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar formulários:", error);
+      toast({
+        title: "Erro ao carregar formulários",
+        description: "Não foi possível carregar os formulários disponíveis.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleSelectTemplate = (templateId: string) => {
+    try {
+      const template = getFormTemplateById(templateId);
+      if (!template) {
+        toast({
+          title: "Formulário não encontrado",
+          description: "O formulário selecionado não está disponível.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setSelectedTemplate(template);
+      
+      // Atualizar dados do formulário
+      setFormData({
+        sections: template.secoes
+      });
+      
+      // Resetar navegação para a primeira seção
+      setCurrentSection(0);
+      
+      // Carregar respostas salvas para este formulário, se houver
+      const employeeId = localStorage.getItem("currentEmployeeId");
+      if (employeeId) {
+        const savedResult = getFormResultByEmployeeId(employeeId, template.id);
+        if (savedResult) {
+          setAnswers(savedResult.answers);
+        } else {
+          // Se não houver resultados salvos para este formulário, limpar as respostas
+          setAnswers({});
         }
+      }
+    } catch (error) {
+      console.error("Erro ao selecionar formulário:", error);
+      toast({
+        title: "Erro ao carregar formulário",
+        description: "Não foi possível carregar o formulário selecionado.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleNext = () => {
+    if (currentSection < formData.sections.length - 1) {
+      setCurrentSection(currentSection + 1);
+    } else {
+      handleFinish();
+    }
+  };
+
+  const handleBack = () => {
+    if (currentSection > 0) {
+      setCurrentSection(currentSection - 1);
+    }
+  };
+
+  const handleFinish = () => {
+    try {
+      if (!selectedTemplate) {
+        toast({
+          title: "Formulário não selecionado",
+          description: "Selecione um formulário para continuar.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const allQuestions = formData.sections.flatMap((section) => section.questions);
+
+      // Verificar se todas as perguntas foram respondidas
+      const unansweredQuestions = allQuestions.filter(
+        (q) => answers[q.id]?.answer === null || answers[q.id]?.answer === undefined
+      );
+
+      if (unansweredQuestions.length > 0) {
+        toast({
+          title: "Formulário incompleto",
+          description: `Faltam ${unansweredQuestions.length} perguntas a serem respondidas.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const totalYes = Object.values(answers).filter((a) => a.answer === true).length;
+      const totalNo = Object.values(answers).filter((a) => a.answer === false).length;
+
+      // Contagem por severidade
+      const severityCounts: Record<string, number> = {};
+      const yesPerSeverity: Record<string, number> = {};
+
+      // Inicializar contagens
+      allQuestions.forEach((q) => {
+        if (!severityCounts[q.severity]) {
+          severityCounts[q.severity] = 0;
+          yesPerSeverity[q.severity] = 0;
+        }
+      });
+
+      // Contar respostas "sim" para cada nível de severidade
+      allQuestions.forEach((q) => {
+        severityCounts[q.severity]++;
+        if (answers[q.id]?.answer === true) {
+          yesPerSeverity[q.severity]++;
+        }
+      });
+
+      // Criar resultado para salvar
+      const result: FormResult = {
+        answers: answers,
+        totalYes,
+        totalNo,
+        severityCounts,
+        yesPerSeverity,
+        analyistNotes: "",
+      };
+
+      // Salvar o resultado no localStorage
+      const employeeId = localStorage.getItem("currentEmployeeId");
+      if (employeeId) {
+        saveFormResult(employeeId, result, selectedTemplate.id);
+        
+        toast({
+          title: "Formulário enviado com sucesso!",
+          description: "Suas respostas foram salvas.",
+        });
+        
+        navigate("/relatorios");
       } else {
         toast({
+          title: "Erro ao salvar respostas",
+          description: "Selecione um funcionário antes de continuar.",
           variant: "destructive",
-          title: "Funcionário não encontrado",
-          description: "O funcionário especificado não foi encontrado."
         });
       }
-    }
-  }, [employeeIdFromUrl, toast]);
-
-  // Load employees when selected company changes
-  useEffect(() => {
-    if (selectedCompanyId) {
-      const employeesForCompany = getEmployeesByCompany(selectedCompanyId);
-      setEmployees(employeesForCompany);
-      // Only reset selected employee when company changes and we're not in edit mode
-      if (!isEditingExistingResponses) {
-        setSelectedEmployeeId("");
-        setSelectedEmployee(null);
-        setShowForm(false);
-      }
-    }
-  }, [selectedCompanyId, isEditingExistingResponses]);
-
-  // Update selected employee object when ID changes
-  useEffect(() => {
-    if (selectedEmployeeId) {
-      const employee = employees.find(e => e.id === selectedEmployeeId);
-      setSelectedEmployee(employee || null);
-      setShowForm(!!employee);
-      
-      // Only reset form state when employee changes and we're not in edit mode
-      if (!isEditingExistingResponses) {
-        setFormAnswers({});
-        setCurrentStep(1);
-        setShowResults(false);
-      }
-      
-      // When editing existing, only load data if it's the initial load
-      if (isEditingExistingResponses) {
-        setIsEditingExistingResponses(false);
-      }
-    }
-  }, [selectedEmployeeId, employees, isEditingExistingResponses]);
-
-  // Calculate results whenever answers change
-  useEffect(() => {
-    calculateResults();
-    
-    // Save form progress as answers change
-    if (selectedEmployeeId && Object.keys(formAnswers).length > 0) {
-      saveFormResult(selectedEmployeeId, {
-        ...formResult,
-        answers: formAnswers
-      });
-    }
-  }, [formAnswers, selectedEmployeeId]);
-
-  const handleCompanyChange = (companyId: string) => {
-    setSelectedCompanyId(companyId);
-  };
-
-  const handleEmployeeChange = (employeeId: string) => {
-    setSelectedEmployeeId(employeeId);
-    
-    // If employee has existing responses, load them
-    const existingResult = getFormResultByEmployeeId(employeeId);
-    if (existingResult) {
-      setFormAnswers(existingResult.answers);
-      setFormResult({
-        answers: existingResult.answers,
-        totalYes: existingResult.totalYes,
-        totalNo: existingResult.totalNo,
-        severityCounts: existingResult.severityCounts,
-        yesPerSeverity: existingResult.yesPerSeverity,
-        analyistNotes: existingResult.analyistNotes
-      });
-      // If form is complete, don't show results yet, let user navigate through the form
-      setShowResults(false);
-      setCurrentStep(1);
-    } else {
-      // Reset form for new employee
-      setFormAnswers({});
-      setFormResult({
-        answers: {},
-        totalYes: 0,
-        totalNo: 0,
-        severityCounts: {
-          "LEVEMENTE PREJUDICIAL": 0,
-          "PREJUDICIAL": 0,
-          "EXTREMAMENTE PREJUDICIAL": 0,
-        },
-        yesPerSeverity: {
-          "LEVEMENTE PREJUDICIAL": 0,
-          "PREJUDICIAL": 0,
-          "EXTREMAMENTE PREJUDICIAL": 0,
-        },
-        analyistNotes: ""
+    } catch (error) {
+      console.error("Erro ao finalizar formulário:", error);
+      toast({
+        title: "Erro ao finalizar formulário",
+        description: "Não foi possível processar suas respostas.",
+        variant: "destructive",
       });
     }
   };
 
-  const handleEmployeeAdded = () => {
-    // Reload employees for the selected company
-    if (selectedCompanyId) {
-      const employeesForCompany = getEmployeesByCompany(selectedCompanyId);
-      setEmployees(employeesForCompany);
-    }
-  };
-
-  const handleAnswerChange = (questionId: number, answer: boolean | null) => {
-    setFormAnswers(prev => ({
-      ...prev,
-      [questionId]: {
-        ...prev[questionId],
-        questionId,
-        answer,
-        observation: prev[questionId]?.observation || "",
-        selectedOptions: prev[questionId]?.selectedOptions || []
-      }
-    }));
-  };
-
-  const handleObservationChange = (questionId: number, observation: string) => {
-    setFormAnswers(prev => ({
-      ...prev,
-      [questionId]: {
-        ...prev[questionId],
-        observation
-      }
-    }));
-  };
-
-  const handleOptionsChange = (questionId: number, selectedOptions: string[]) => {
-    setFormAnswers(prev => ({
-      ...prev,
-      [questionId]: {
-        ...prev[questionId],
-        selectedOptions
-      }
-    }));
-  };
-
-  const handleAnalystNotesChange = (notes: string) => {
-    setFormResult(prev => ({
-      ...prev,
-      analyistNotes: notes
-    }));
-    
-    // Save the notes immediately when they change
-    if (selectedEmployeeId) {
-      saveFormResult(selectedEmployeeId, {
-        ...formResult,
-        analyistNotes: notes
-      });
-    }
-  };
-
-  const calculateResults = () => {
-    // Count yes/no answers
-    let totalYes = 0;
-    let totalNo = 0;
-    const severityCounts = {
-      "LEVEMENTE PREJUDICIAL": 0,
-      "PREJUDICIAL": 0,
-      "EXTREMAMENTE PREJUDICIAL": 0,
-    };
-    const yesPerSeverity = {
-      "LEVEMENTE PREJUDICIAL": 0,
-      "PREJUDICIAL": 0,
-      "EXTREMAMENTE PREJUDICIAL": 0,
-    };
-
-    // Get all questions from all sections
-    const allQuestions = formData.sections.flatMap(section => section.questions);
-    
-    // Calculate statistics
-    Object.values(formAnswers).forEach(answer => {
-      const question = allQuestions.find(q => q.id === answer.questionId);
-      
-      if (answer.answer === true) {
-        totalYes++;
-        if (question) {
-          yesPerSeverity[question.severity]++;
-        }
-      } else if (answer.answer === false) {
-        totalNo++;
-      }
-      
-      if (question) {
-        severityCounts[question.severity]++;
-      }
+  const handleAnswerChange = (questionId: number, value: boolean | null, observation?: string, selectedOptions?: string[]) => {
+    setAnswers({
+      ...answers,
+      [questionId]: { 
+        answer: value, 
+        observation: observation,
+        selectedOptions: selectedOptions 
+      },
     });
-
-    setFormResult(prev => ({
-      ...prev,
-      answers: formAnswers,
-      totalYes,
-      totalNo,
-      severityCounts,
-      yesPerSeverity,
-    }));
   };
 
-  const handleNextStep = () => {
-    const nextStep = currentStep + 1;
-    if (nextStep <= formData.sections.length) {
-      setCurrentStep(nextStep);
-      window.scrollTo(0, 0);
-    } else {
-      setShowResults(true);
-      window.scrollTo(0, 0);
-    }
-  };
-
-  const handlePrevStep = () => {
-    const prevStep = currentStep - 1;
-    if (prevStep > 0) {
-      setCurrentStep(prevStep);
-      window.scrollTo(0, 0);
-    }
-  };
-
-  const handleRestart = () => {
-    setFormAnswers({});
-    setCurrentStep(1);
-    setShowResults(false);
-    window.scrollTo(0, 0);
-  };
-
-  const handleBackToEmployeeList = () => {
-    window.history.pushState({}, '', '/cadastros/funcionarios');
-    window.location.reload();
-  };
-
-  // Utility function to get job role by id
-  const getJobRoleById = (roleId: string) => {
-    return jobRoles.find(role => role.id === roleId);
-  };
-
-  // Check if current section has all required fields filled
-  const isSectionComplete = () => {
-    const currentSection = formData.sections[currentStep - 1];
-    if (!currentSection) return true;
-    
-    const sectionQuestionIds = currentSection.questions.map(q => q.id);
-    return sectionQuestionIds.every(id => 
-      formAnswers[id] && formAnswers[id].answer !== null
-    );
-  };
-
-  // Progress indicator
-  const progress = Math.round((currentStep / formData.sections.length) * 100);
+  const currentSectionData = formData.sections[currentSection];
+  const progress = ((currentSection + 1) / formData.sections.length) * 100;
 
   return (
     <Layout>
-      <div className="container mx-auto p-4 pb-16">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Formulário de Avaliação</h1>
-          {employeeIdFromUrl && (
-            <Button 
-              variant="outline" 
-              onClick={handleBackToEmployeeList}
-              className="flex items-center gap-1"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Voltar para lista de funcionários
-            </Button>
-          )}
-        </div>
+      <div className="container mx-auto p-4 max-w-4xl">
+        <h1 className="text-2xl font-bold mb-6">Formulário de Avaliação de Riscos Psicossociais</h1>
         
-        <p className="text-lg mb-8">
-          Utilize este formulário para realizar a avaliação de riscos ocupacionais para um funcionário.
-        </p>
-
-        {!employeeIdFromUrl && (
-          <Card className="p-6 mb-8">
-            <div className="grid gap-6 md:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium mb-2">Selecione a Empresa</label>
-                <Select value={selectedCompanyId} onValueChange={handleCompanyChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Escolha uma empresa" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Selecione o Funcionário</label>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <Select 
-                      value={selectedEmployeeId} 
-                      onValueChange={handleEmployeeChange}
-                      disabled={!selectedCompanyId || employees.length === 0}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={!selectedCompanyId 
-                          ? "Selecione uma empresa primeiro" 
-                          : employees.length === 0 
-                            ? "Nenhum funcionário cadastrado" 
-                            : "Escolha um funcionário"} 
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees.map((employee) => (
-                          <SelectItem key={employee.id} value={employee.id}>
-                            {employee.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={() => setIsNewEmployeeModalOpen(true)}
-                    disabled={!selectedCompanyId}
-                    title="Adicionar novo funcionário"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
+        {/* Seletor de formulário */}
+        {formTemplates.length > 1 && (
+          <Card className="p-4 mb-6">
+            <label className="block text-sm font-medium mb-2">Selecione o formulário:</label>
+            <Select
+              value={selectedTemplate?.id}
+              onValueChange={handleSelectTemplate}
+            >
+              <SelectTrigger className="w-full md:w-1/2">
+                <SelectValue placeholder="Selecione um formulário" />
+              </SelectTrigger>
+              <SelectContent>
+                {formTemplates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedTemplate && (
+              <p className="mt-2 text-sm text-muted-foreground">{selectedTemplate.descricao}</p>
+            )}
           </Card>
         )}
-
-        {showForm && !showResults && (
+        
+        {selectedTemplate && (
           <>
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-xl font-semibold mb-4">Avaliação para: {selectedEmployee?.name}</h2>
-              <p className="text-gray-600">
-                Função: {getJobRoleById(selectedEmployee?.roleId || "")?.name || "N/A"}
-              </p>
-            </div>
-
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-muted-foreground">
-                  Seção {currentStep} de {formData.sections.length}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {progress}% completo
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  className="bg-esocial-blue h-2.5 rounded-full"
-                  style={{ width: `${progress}%` }}
-                ></div>
+            <div className="bg-muted h-2 w-full rounded-full mb-6">
+              <div
+                className="bg-primary h-2 rounded-full transition-all"
+                style={{ width: `${progress}%` }}
+              ></div>
+              <div className="text-xs text-center mt-1">
+                Seção {currentSection + 1} de {formData.sections.length}
               </div>
             </div>
 
-            {formData.sections[currentStep - 1] && (
-              <FormSection
-                section={formData.sections[currentStep - 1]}
-                answers={formAnswers}
-                onAnswerChange={handleAnswerChange}
-                onObservationChange={handleObservationChange}
-                onOptionsChange={handleOptionsChange}
-              />
-            )}
+            <FormSection
+              section={currentSectionData}
+              answers={answers}
+              onAnswerChange={handleAnswerChange}
+            />
 
-            <div className="flex justify-between mt-8">
+            <div className="mt-8 flex justify-between">
               <Button
                 variant="outline"
-                onClick={handlePrevStep}
-                disabled={currentStep === 1}
+                onClick={handleBack}
+                disabled={currentSection === 0}
               >
-                Anterior
+                Voltar
               </Button>
-              <Button
-                onClick={handleNextStep}
-                disabled={!isSectionComplete()}
-              >
-                {currentStep < formData.sections.length ? "Próximo" : "Ver Resultados"}
+              <Button onClick={handleNext}>
+                {currentSection < formData.sections.length - 1 ? "Próximo" : "Finalizar"}
               </Button>
             </div>
           </>
-        )}
-
-        {showForm && showResults && (
-          <>
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-xl font-semibold mb-4">Resultados da Avaliação para: {selectedEmployee?.name}</h2>
-              <p className="text-gray-600">
-                Função: {getJobRoleById(selectedEmployee?.roleId || "")?.name || "N/A"}
-              </p>
-            </div>
-
-            <FormResults 
-              result={formResult} 
-              onNotesChange={handleAnalystNotesChange} 
-            />
-            
-            <div className="flex justify-center mt-8">
-              <Button 
-                variant="outline" 
-                onClick={handleRestart}
-                className="w-full md:w-auto"
-              >
-                Iniciar Nova Avaliação para {selectedEmployee?.name}
-              </Button>
-            </div>
-          </>
-        )}
-
-        {!showForm && (
-          <Card className="p-6 text-center">
-            <p className="text-lg mb-4">Selecione uma empresa e um funcionário para iniciar a avaliação.</p>
-          </Card>
-        )}
-
-        {isNewEmployeeModalOpen && (
-          <NewEmployeeModal
-            open={isNewEmployeeModalOpen}
-            onOpenChange={setIsNewEmployeeModalOpen}
-            onEmployeeAdded={handleEmployeeAdded}
-            preselectedCompanyId={selectedCompanyId}
-          />
         )}
       </div>
     </Layout>

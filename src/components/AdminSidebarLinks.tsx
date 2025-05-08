@@ -1,7 +1,7 @@
 
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { Building2, FileText, BarChart2, CreditCard, ShoppingBag, Briefcase } from "lucide-react";
+import { Building2, FileText, BarChart2, CreditCard, ShoppingBag, Briefcase, ClipboardList } from "lucide-react";
 
 const AdminSidebarLinks: React.FC = () => {
   const activeClassName = 
@@ -26,6 +26,14 @@ const AdminSidebarLinks: React.FC = () => {
       >
         <Building2 size={20} />
         <span>Clientes</span>
+      </NavLink>
+      
+      <NavLink 
+        to="/admin/formularios" 
+        className={({ isActive }) => isActive ? activeClassName : inactiveClassName}
+      >
+        <ClipboardList size={20} />
+        <span>Formulários</span>
       </NavLink>
       
       <NavLink 

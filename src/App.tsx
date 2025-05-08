@@ -17,6 +17,7 @@ import ClientesPage from "./pages/admin/ClientesPage";
 import PlanosPage from "./pages/admin/PlanosPage";
 import ContratosPage from "./pages/admin/ContratosPage";
 import FaturamentoPage from "./pages/admin/FaturamentoPage";
+import FormulariosPage from "./pages/admin/FormulariosPage";
 import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
@@ -125,6 +126,14 @@ const App = () => {
             element={
               <ProtectedRoute userType="admin">
                 <ClientesPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/formularios" 
+            element={
+              <ProtectedRoute userType="admin">
+                <FormulariosPage />
               </ProtectedRoute>
             } 
           />

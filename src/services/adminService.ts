@@ -230,7 +230,8 @@ export const addCliente = (cliente: Omit<Cliente, "id" | "dataInclusao">): Clien
   const newCliente: Cliente = {
     ...cliente,
     id: Date.now().toString(),
-    dataInclusao: Date.now()
+    dataInclusao: Date.now(),
+    formulariosIds: ["istas21-br"] // Por padrão, atribuir o formulário padrão
   };
   localStorage.setItem(CLIENTES_KEY, JSON.stringify([...clientes, newCliente]));
   return newCliente;
@@ -255,6 +256,26 @@ export const deleteCliente = (id: string): void => {
   const faturas = getFaturas();
   const filteredFaturas = faturas.filter(f => f.clienteId !== id);
   localStorage.setItem(FATURAS_KEY, JSON.stringify(filteredFaturas));
+};
+
+// Atribuir formulários a um cliente
+export const assignFormTemplatesToClient = (clienteId: string, templateIds: string[]): void => {
+  const clientes = getClientes();
+  const cliente = clientes.find(c => c.id === clienteId);
+  
+  if (!cliente) {
+    throw new Error("Cliente não encontrado");
+  }
+  
+  cliente.formulariosIds = templateIds;
+  updateCliente(cliente);
+};
+
+// Obter formulários atribuídos a um cliente
+export const getClientFormTemplates = (clienteId: string): string[] => {
+  const cliente = getClienteById(clienteId);
+  if (!cliente) return ["istas21-br"]; // Retornar formulário padrão se cliente não for encontrado
+  return cliente.formulariosIds || ["istas21-br"];
 };
 
 // Planos

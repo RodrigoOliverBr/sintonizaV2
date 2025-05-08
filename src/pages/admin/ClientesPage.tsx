@@ -1,456 +1,591 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { PlusCircle, Search, Edit, Trash, Eye, UserCheck, Download } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pencil, Trash2, Plus, ExternalLink, Lock, Unlock, Check, AlertTriangle } from "lucide-react";
-import { Cliente, TipoPessoa, ClienteStatus } from "@/types/admin";
-import { getClientes, addCliente, updateCliente, deleteCliente, getFaturasByClienteId } from "@/services/adminService";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { 
+  getClientes, 
+  addCliente, 
+  updateCliente, 
+  deleteCliente, 
+  Cliente, 
+  TipoPessoa, 
+  ClienteStatus 
+} from "@/services/adminService";
+import ClienteFormularios from "@/components/admin/ClienteFormularios";
 
-const ClientesPage: React.FC = () => {
-  const [clientes, setClientes] = useState<Cliente[]>(getClientes());
-  const [openNewModal, setOpenNewModal] = useState(false);
-  const [openEditModal, setOpenEditModal] = useState(false);
-  const [openDeleteModal, setOpenDeleteModal] = useState(false);
-  const [currentCliente, setCurrentCliente] = useState<Cliente | null>(null);
+const ClientesPage = () => {
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+  const [clienteToDelete, setClienteToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  
-  const [formNome, setFormNome] = useState("");
-  const [formTipo, setFormTipo] = useState<TipoPessoa>("juridica");
-  const [formNumeroEmpregados, setFormNumeroEmpregados] = useState(0);
-  const [formSituacao, setFormSituacao] = useState<ClienteStatus>("liberado");
-  const [formCpfCnpj, setFormCpfCnpj] = useState("");
-  const [formEmail, setFormEmail] = useState("");
-  const [formTelefone, setFormTelefone] = useState("");
-  const [formEndereco, setFormEndereco] = useState("");
-  const [formCidade, setFormCidade] = useState("");
-  const [formEstado, setFormEstado] = useState("");
-  const [formCep, setFormCep] = useState("");
-  const [formContato, setFormContato] = useState("");
-  
+  const [statusFilter, setStatusFilter] = useState<"todos" | ClienteStatus>("todos");
+  const [currentCliente, setCurrentCliente] = useState<Cliente | null>(null);
+  const [detailsCliente, setDetailsCliente] = useState<Cliente | null>(null);
+  const [activeTab, setActiveTab] = useState("detalhes");
   const navigate = useNavigate();
   
-  const refreshClientes = () => {
-    setClientes(getClientes());
+  // Form states
+  const [nome, setNome] = useState("");
+  const [tipo, setTipo] = useState<TipoPessoa>("juridica");
+  const [numeroEmpregados, setNumeroEmpregados] = useState("0");
+  const [situacao, setSituacao] = useState<ClienteStatus>("liberado");
+  const [cpfCnpj, setCpfCnpj] = useState("");
+  const [email, setEmail] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [endereco, setEndereco] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
+  const [cep, setCep] = useState("");
+  const [contato, setContato] = useState("");
+
+  useEffect(() => {
+    loadClientes();
+  }, []);
+
+  const loadClientes = () => {
+    const clientesData = getClientes();
+    setClientes(clientesData);
   };
-  
-  const clearForm = () => {
-    setFormNome("");
-    setFormTipo("juridica");
-    setFormNumeroEmpregados(0);
-    setFormSituacao("liberado");
-    setFormCpfCnpj("");
-    setFormEmail("");
-    setFormTelefone("");
-    setFormEndereco("");
-    setFormCidade("");
-    setFormEstado("");
-    setFormCep("");
-    setFormContato("");
-  };
-  
-  const handleOpenEditModal = (cliente: Cliente) => {
-    setCurrentCliente(cliente);
-    setFormNome(cliente.nome);
-    setFormTipo(cliente.tipo);
-    setFormNumeroEmpregados(cliente.numeroEmpregados);
-    setFormSituacao(cliente.situacao);
-    setFormCpfCnpj(cliente.cpfCnpj);
-    setFormEmail(cliente.email);
-    setFormTelefone(cliente.telefone);
-    setFormEndereco(cliente.endereco);
-    setFormCidade(cliente.cidade);
-    setFormEstado(cliente.estado);
-    setFormCep(cliente.cep);
-    setFormContato(cliente.contato);
-    setOpenEditModal(true);
-  };
-  
-  const handleOpenDeleteModal = (cliente: Cliente) => {
-    setCurrentCliente(cliente);
-    setOpenDeleteModal(true);
-  };
-  
+
   const handleAddCliente = () => {
+    setCurrentCliente(null);
+    resetForm();
+    setIsFormDialogOpen(true);
+  };
+
+  const handleEditCliente = (cliente: Cliente) => {
+    setCurrentCliente(cliente);
+    fillForm(cliente);
+    setIsFormDialogOpen(true);
+  };
+
+  const handleViewCliente = (cliente: Cliente) => {
+    setDetailsCliente(cliente);
+    setActiveTab("detalhes");
+  };
+
+  const handleSaveCliente = () => {
     try {
-      addCliente({
-        nome: formNome,
-        tipo: formTipo,
-        numeroEmpregados: formNumeroEmpregados,
-        situacao: formSituacao,
-        cpfCnpj: formCpfCnpj,
-        email: formEmail,
-        telefone: formTelefone,
-        endereco: formEndereco,
-        cidade: formCidade,
-        estado: formEstado,
-        cep: formCep,
-        contato: formContato
-      });
-      refreshClientes();
-      setOpenNewModal(false);
-      clearForm();
-      toast.success("Cliente adicionado com sucesso!");
+      // Validações básicas
+      if (!nome.trim() || !email.trim() || !cpfCnpj.trim()) {
+        toast.error("Preencha os campos obrigatórios");
+        return;
+      }
+
+      const clienteData = {
+        nome,
+        tipo,
+        numeroEmpregados: parseInt(numeroEmpregados),
+        situacao,
+        cpfCnpj,
+        email,
+        telefone,
+        endereco,
+        cidade,
+        estado,
+        cep,
+        contato,
+      };
+
+      if (currentCliente) {
+        // Atualização
+        updateCliente({
+          ...currentCliente,
+          ...clienteData,
+        });
+        toast.success("Cliente atualizado com sucesso");
+      } else {
+        // Novo cliente
+        addCliente(clienteData);
+        toast.success("Cliente adicionado com sucesso");
+      }
+
+      setIsFormDialogOpen(false);
+      loadClientes();
     } catch (error) {
-      toast.error("Erro ao adicionar cliente.");
+      toast.error(`Erro ao salvar cliente: ${(error as Error).message}`);
     }
   };
-  
-  const handleUpdateCliente = () => {
-    if (!currentCliente) return;
-    
-    try {
-      updateCliente({
-        ...currentCliente,
-        nome: formNome,
-        tipo: formTipo,
-        numeroEmpregados: formNumeroEmpregados,
-        situacao: formSituacao,
-        cpfCnpj: formCpfCnpj,
-        email: formEmail,
-        telefone: formTelefone,
-        endereco: formEndereco,
-        cidade: formCidade,
-        estado: formEstado,
-        cep: formCep,
-        contato: formContato
-      });
-      refreshClientes();
-      setOpenEditModal(false);
-      clearForm();
-      toast.success("Cliente atualizado com sucesso!");
-    } catch (error) {
-      toast.error("Erro ao atualizar cliente.");
-    }
-  };
-  
+
   const handleDeleteCliente = () => {
-    if (!currentCliente) return;
-    
-    try {
-      deleteCliente(currentCliente.id);
-      refreshClientes();
-      setOpenDeleteModal(false);
-      toast.success("Cliente excluído com sucesso!");
-    } catch (error) {
-      toast.error("Erro ao excluir cliente.");
+    if (clienteToDelete) {
+      try {
+        deleteCliente(clienteToDelete);
+        toast.success("Cliente excluído com sucesso");
+        setIsDeleteDialogOpen(false);
+        loadClientes();
+      } catch (error) {
+        toast.error(`Erro ao excluir cliente: ${(error as Error).message}`);
+      }
     }
   };
-  
-  const handleAccessClienteArea = (cliente: Cliente) => {
+
+  const confirmDelete = (id: string) => {
+    setClienteToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const fillForm = (cliente: Cliente) => {
+    setNome(cliente.nome);
+    setTipo(cliente.tipo);
+    setNumeroEmpregados(cliente.numeroEmpregados.toString());
+    setSituacao(cliente.situacao);
+    setCpfCnpj(cliente.cpfCnpj);
+    setEmail(cliente.email);
+    setTelefone(cliente.telefone);
+    setEndereco(cliente.endereco);
+    setCidade(cliente.cidade);
+    setEstado(cliente.estado);
+    setCep(cliente.cep);
+    setContato(cliente.contato);
+  };
+
+  const resetForm = () => {
+    setNome("");
+    setTipo("juridica");
+    setNumeroEmpregados("0");
+    setSituacao("liberado");
+    setCpfCnpj("");
+    setEmail("");
+    setTelefone("");
+    setEndereco("");
+    setCidade("");
+    setEstado("");
+    setCep("");
+    setContato("");
+  };
+
+  const handleLoginAsCliente = (cliente: Cliente) => {
+    if (cliente.situacao !== "liberado") {
+      toast.error("Este cliente está bloqueado e não pode ser acessado");
+      return;
+    }
+
     localStorage.setItem("sintonia:userType", "cliente");
     localStorage.setItem("sintonia:currentCliente", JSON.stringify(cliente));
     navigate("/");
   };
-  
-  const checkClienteStatus = (clienteId: string) => {
-    const faturas = getFaturasByClienteId(clienteId);
-    const hasOverdueFatura = faturas.some(
-      f => f.status === 'atrasado' || 
-      (f.status === 'pendente' && new Date(f.dataVencimento) < new Date())
+
+  const filteredClientes = clientes
+    .filter((cliente) =>
+      cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cliente.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cliente.cpfCnpj.includes(searchTerm)
+    )
+    .filter((cliente) =>
+      statusFilter === "todos" ? true : cliente.situacao === statusFilter
     );
-    return hasOverdueFatura ? 'atrasado' : 'em_dia';
-  };
-  
-  const handleToggleStatus = (cliente: Cliente) => {
-    const newStatus: ClienteStatus = cliente.situacao === 'liberado' ? 'bloqueado' : 'liberado';
-    const updatedCliente = {
-      ...cliente,
-      situacao: newStatus
-    };
-    updateCliente(updatedCliente);
-    refreshClientes();
-    toast.success(`Cliente ${newStatus === 'liberado' ? 'liberado' : 'bloqueado'} com sucesso!`);
-  };
-  
-  const filteredClientes = clientes.filter(cliente => 
-    cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cliente.cpfCnpj.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <AdminLayout title="Clientes">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Gerenciamento de Clientes</CardTitle>
-              <CardDescription>
-                Cadastre e gerencie os clientes que utilizam o sistema
-              </CardDescription>
-            </div>
-            <Dialog open={openNewModal} onOpenChange={setOpenNewModal}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <Plus size={16} />
-                  Novo Cliente
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
-                  <DialogTitle>Adicionar Novo Cliente</DialogTitle>
-                  <DialogDescription>
-                    Preencha as informações do novo cliente.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="nome">Nome</Label>
-                    <Input id="nome" value={formNome} onChange={(e) => setFormNome(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="tipo">Tipo</Label>
-                    <Select 
-                      value={formTipo} 
-                      onValueChange={(value: TipoPessoa) => setFormTipo(value)}
-                    >
-                      <SelectTrigger id="tipo">
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="fisica">Pessoa Física</SelectItem>
-                        <SelectItem value="juridica">Pessoa Jurídica</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cpfCnpj">CPF/CNPJ</Label>
-                    <Input id="cpfCnpj" value={formCpfCnpj} onChange={(e) => setFormCpfCnpj(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="numeroEmpregados">Número de Empregados</Label>
-                    <Input 
-                      id="numeroEmpregados" 
-                      type="number" 
-                      min={0}
-                      value={formNumeroEmpregados} 
-                      onChange={(e) => setFormNumeroEmpregados(Number(e.target.value))} 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="telefone">Telefone</Label>
-                    <Input id="telefone" value={formTelefone} onChange={(e) => setFormTelefone(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contato">Nome do Contato</Label>
-                    <Input id="contato" value={formContato} onChange={(e) => setFormContato(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="situacao">Situação</Label>
-                    <Select 
-                      value={formSituacao} 
-                      onValueChange={(value: ClienteStatus) => setFormSituacao(value)}
-                    >
-                      <SelectTrigger id="situacao">
-                        <SelectValue placeholder="Selecione a situação" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="liberado">Liberado</SelectItem>
-                        <SelectItem value="bloqueado">Bloqueado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endereco">Endereço</Label>
-                    <Input id="endereco" value={formEndereco} onChange={(e) => setFormEndereco(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cidade">Cidade</Label>
-                    <Input id="cidade" value={formCidade} onChange={(e) => setFormCidade(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="estado">Estado</Label>
-                    <Input id="estado" value={formEstado} onChange={(e) => setFormEstado(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cep">CEP</Label>
-                    <Input id="cep" value={formCep} onChange={(e) => setFormCep(e.target.value)} />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setOpenNewModal(false)}>Cancelar</Button>
-                  <Button onClick={handleAddCliente}>Salvar</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-          <div className="pt-4">
+      <div className="mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
             <Input
-              placeholder="Buscar cliente por nome ou CPF/CNPJ..."
+              placeholder="Buscar cliente..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-xl"
+              className="w-full"
             />
           </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>CPF/CNPJ</TableHead>
-                <TableHead>Funcionários</TableHead>
-                <TableHead>Data de Inclusão</TableHead>
-                <TableHead>Situação</TableHead>
-                <TableHead>Status Pagamento</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredClientes.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-4 text-muted-foreground">
-                    Nenhum cliente encontrado.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredClientes.map((cliente) => (
-                  <TableRow key={cliente.id}>
-                    <TableCell className="font-medium">{cliente.nome}</TableCell>
-                    <TableCell>{cliente.tipo === "fisica" ? "Pessoa Física" : "Pessoa Jurídica"}</TableCell>
-                    <TableCell>{cliente.cpfCnpj}</TableCell>
-                    <TableCell>{cliente.numeroEmpregados}</TableCell>
-                    <TableCell>
-                      {format(new Date(cliente.dataInclusao), "dd/MM/yyyy", {locale: ptBR})}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={cliente.situacao === "liberado" ? "default" : "destructive"}>
-                        {cliente.situacao === "liberado" ? "Liberado" : "Bloqueado"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {checkClienteStatus(cliente.id) === 'em_dia' ? (
-                        <Badge variant="success" className="bg-green-500">
-                          <Check className="w-4 h-4 mr-1" />
-                          Em dia
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive">
-                          <AlertTriangle className="w-4 h-4 mr-1" />
-                          Faturas atrasadas
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleAccessClienteArea(cliente)}
-                          title="Acessar Área do Cliente"
-                        >
-                          <ExternalLink size={16} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleToggleStatus(cliente)}
-                          title={cliente.situacao === 'liberado' ? 'Bloquear Acesso' : 'Liberar Acesso'}
-                        >
-                          {cliente.situacao === 'liberado' ? 
-                            <Lock size={16} /> : 
-                            <Unlock size={16} />
+          <div>
+            <Select
+              value={statusFilter}
+              onValueChange={(value: any) => setStatusFilter(value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Filtrar por status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os status</SelectItem>
+                <SelectItem value="liberado">Liberados</SelectItem>
+                <SelectItem value="bloqueado">Bloqueados</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-right">
+            <Button onClick={handleAddCliente}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Novo Cliente
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Lista de clientes */}
+        <div className="md:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Lista de Clientes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="max-h-[calc(100vh-220px)] overflow-y-auto pr-2">
+                {filteredClientes.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum cliente encontrado
+                  </div>
+                ) : (
+                  filteredClientes.map((cliente) => (
+                    <div
+                      key={cliente.id}
+                      className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors ${
+                        detailsCliente?.id === cliente.id ? "bg-muted" : ""
+                      }`}
+                      onClick={() => handleViewCliente(cliente)}
+                    >
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-medium">{cliente.nome}</h3>
+                        <Badge
+                          variant={
+                            cliente.situacao === "liberado"
+                              ? "outline"
+                              : "destructive"
                           }
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleOpenEditModal(cliente)}
                         >
-                          <Pencil size={16} />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleOpenDeleteModal(cliente)}
-                        >
-                          <Trash2 size={16} />
-                        </Button>
+                          {cliente.situacao === "liberado"
+                            ? "Liberado"
+                            : "Bloqueado"}
+                        </Badge>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-      
-      <Dialog open={openEditModal} onOpenChange={setOpenEditModal}>
-        <DialogContent className="sm:max-w-[600px]">
+                      <p className="text-sm text-muted-foreground">
+                        {cliente.email}
+                      </p>
+                      <div className="mt-2 text-xs flex justify-between items-center text-muted-foreground">
+                        <span>
+                          Incluído em:{" "}
+                          {new Date(cliente.dataInclusao).toLocaleDateString()}
+                        </span>
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditCliente(cliente);
+                            }}
+                            className="p-1 hover:text-primary"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              confirmDelete(cliente.id);
+                            }}
+                            className="p-1 hover:text-destructive"
+                          >
+                            <Trash size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Detalhes do cliente */}
+        <div className="md:col-span-2">
+          {detailsCliente ? (
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>{detailsCliente.nome}</CardTitle>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditCliente(detailsCliente)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Editar
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => handleLoginAsCliente(detailsCliente)}
+                    >
+                      <UserCheck className="h-4 w-4 mr-1" />
+                      Acessar
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
+                    <TabsTrigger value="formularios">Formulários</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="detalhes">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium">Tipo de Pessoa</p>
+                        <p className="text-sm text-muted-foreground">
+                          {detailsCliente.tipo === "juridica"
+                            ? "Pessoa Jurídica"
+                            : "Pessoa Física"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">CPF/CNPJ</p>
+                        <p className="text-sm text-muted-foreground">
+                          {detailsCliente.cpfCnpj}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Email</p>
+                        <p className="text-sm text-muted-foreground">
+                          {detailsCliente.email}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Telefone</p>
+                        <p className="text-sm text-muted-foreground">
+                          {detailsCliente.telefone || "Não informado"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Contato</p>
+                        <p className="text-sm text-muted-foreground">
+                          {detailsCliente.contato || "Não informado"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Número de Empregados</p>
+                        <p className="text-sm text-muted-foreground">
+                          {detailsCliente.numeroEmpregados}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Endereço</p>
+                        <p className="text-sm text-muted-foreground">
+                          {detailsCliente.endereco}, {detailsCliente.cidade} - {detailsCliente.estado}, {detailsCliente.cep}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Status</p>
+                        <Badge
+                          variant={
+                            detailsCliente.situacao === "liberado"
+                              ? "outline"
+                              : "destructive"
+                          }
+                        >
+                          {detailsCliente.situacao === "liberado"
+                            ? "Liberado"
+                            : "Bloqueado"}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Data de Inclusão</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(detailsCliente.dataInclusao).toLocaleDateString()}{" "}
+                          {new Date(detailsCliente.dataInclusao).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="formularios">
+                    <ClienteFormularios clienteId={detailsCliente.id} />
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full p-8 border rounded-lg border-dashed">
+              <div className="text-center">
+                <h3 className="mb-2 text-xl font-semibold">
+                  Selecione um cliente
+                </h3>
+                <p className="text-muted-foreground">
+                  Clique em um cliente para ver seus detalhes
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Modal para criar/editar cliente */}
+      <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Editar Cliente</DialogTitle>
+            <DialogTitle>
+              {currentCliente ? "Editar Cliente" : "Novo Cliente"}
+            </DialogTitle>
             <DialogDescription>
-              Atualize as informações do cliente.
+              {currentCliente
+                ? "Atualize as informações do cliente"
+                : "Preencha os dados para adicionar um novo cliente"}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-nome">Nome</Label>
-              <Input id="edit-nome" value={formNome} onChange={(e) => setFormNome(e.target.value)} />
+              <Label htmlFor="nome">Nome</Label>
+              <Input
+                id="nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Nome do cliente"
+              />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="edit-tipo">Tipo</Label>
-              <Select 
-                value={formTipo} 
-                onValueChange={(value: TipoPessoa) => setFormTipo(value)}
-              >
-                <SelectTrigger id="edit-tipo">
+              <Label htmlFor="tipo">Tipo de Pessoa</Label>
+              <Select value={tipo} onValueChange={(value: TipoPessoa) => setTipo(value)}>
+                <SelectTrigger>
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fisica">Pessoa Física</SelectItem>
                   <SelectItem value="juridica">Pessoa Jurídica</SelectItem>
+                  <SelectItem value="fisica">Pessoa Física</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="edit-cpfCnpj">CPF/CNPJ</Label>
-              <Input id="edit-cpfCnpj" value={formCpfCnpj} onChange={(e) => setFormCpfCnpj(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-numeroEmpregados">Número de Empregados</Label>
-              <Input 
-                id="edit-numeroEmpregados" 
-                type="number" 
-                min={0}
-                value={formNumeroEmpregados} 
-                onChange={(e) => setFormNumeroEmpregados(Number(e.target.value))} 
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="email@exemplo.com"
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="edit-email">Email</Label>
-              <Input id="edit-email" type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} />
+              <Label htmlFor="cpfCnpj">CPF/CNPJ</Label>
+              <Input
+                id="cpfCnpj"
+                value={cpfCnpj}
+                onChange={(e) => setCpfCnpj(e.target.value)}
+                placeholder="000.000.000-00"
+              />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="edit-telefone">Telefone</Label>
-              <Input id="edit-telefone" value={formTelefone} onChange={(e) => setFormTelefone(e.target.value)} />
+              <Label htmlFor="telefone">Telefone</Label>
+              <Input
+                id="telefone"
+                value={telefone}
+                onChange={(e) => setTelefone(e.target.value)}
+                placeholder="(00) 0000-0000"
+              />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="edit-contato">Nome do Contato</Label>
-              <Input id="edit-contato" value={formContato} onChange={(e) => setFormContato(e.target.value)} />
+              <Label htmlFor="contato">Nome do Contato</Label>
+              <Input
+                id="contato"
+                value={contato}
+                onChange={(e) => setContato(e.target.value)}
+                placeholder="Nome do contato"
+              />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="edit-situacao">Situação</Label>
-              <Select 
-                value={formSituacao} 
-                onValueChange={(value: ClienteStatus) => setFormSituacao(value)}
-              >
-                <SelectTrigger id="edit-situacao">
+              <Label htmlFor="endereco">Endereço</Label>
+              <Input
+                id="endereco"
+                value={endereco}
+                onChange={(e) => setEndereco(e.target.value)}
+                placeholder="Endereço completo"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cidade">Cidade</Label>
+              <Input
+                id="cidade"
+                value={cidade}
+                onChange={(e) => setCidade(e.target.value)}
+                placeholder="Cidade"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="estado">Estado</Label>
+              <Input
+                id="estado"
+                value={estado}
+                onChange={(e) => setEstado(e.target.value)}
+                placeholder="UF"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cep">CEP</Label>
+              <Input
+                id="cep"
+                value={cep}
+                onChange={(e) => setCep(e.target.value)}
+                placeholder="00000-000"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="numeroEmpregados">Número de Empregados</Label>
+              <Input
+                id="numeroEmpregados"
+                type="number"
+                min="0"
+                value={numeroEmpregados}
+                onChange={(e) => setNumeroEmpregados(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="situacao">Situação</Label>
+              <Select value={situacao} onValueChange={(value: ClienteStatus) => setSituacao(value)}>
+                <SelectTrigger>
                   <SelectValue placeholder="Selecione a situação" />
                 </SelectTrigger>
                 <SelectContent>
@@ -459,44 +594,37 @@ const ClientesPage: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-endereco">Endereço</Label>
-              <Input id="edit-endereco" value={formEndereco} onChange={(e) => setFormEndereco(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-cidade">Cidade</Label>
-              <Input id="edit-cidade" value={formCidade} onChange={(e) => setFormCidade(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-estado">Estado</Label>
-              <Input id="edit-estado" value={formEstado} onChange={(e) => setFormEstado(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-cep">CEP</Label>
-              <Input id="edit-cep" value={formCep} onChange={(e) => setFormCep(e.target.value)} />
-            </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenEditModal(false)}>Cancelar</Button>
-            <Button onClick={handleUpdateCliente}>Salvar</Button>
+            <Button variant="outline" onClick={() => setIsFormDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveCliente}>Salvar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      <Dialog open={openDeleteModal} onOpenChange={setOpenDeleteModal}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Confirmar exclusão</DialogTitle>
-            <DialogDescription>
-              Você está prestes a excluir o cliente "{currentCliente?.nome}". Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenDeleteModal(false)}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleDeleteCliente}>Excluir</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+      {/* Diálogo de confirmação de exclusão */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCliente}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };

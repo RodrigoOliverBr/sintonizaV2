@@ -17,8 +17,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
   const navigate = useNavigate();
   
   const handleLogout = () => {
-    localStorage.removeItem("sintonia:userType");
-    localStorage.removeItem("sintonia:currentCliente");
+    localStorage.removeItem("sintoniza:userType");
+    localStorage.removeItem("sintoniza:currentCliente");
     navigate("/login");
   };
 
@@ -30,12 +30,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
           <div className="flex items-center h-16 flex-shrink-0 px-4 border-b bg-esocial-blue">
             <div className="flex items-center">
               <img 
-                src="/lovable-uploads/5fbfce9a-dae3-444b-99c8-9b92040ef7e2.png" 
-                alt="Sintonia Logo" 
+                src="/lovable-uploads/d550586d-cad5-4f72-9a59-4bdd27224f50.png" 
+                alt="Sintoniza Logo" 
                 className="h-10 mr-2" 
               />
               <span className="text-xl font-semibold text-white">
-                Sintonia Admin
+                Sintoniza Admin
               </span>
             </div>
           </div>
@@ -66,11 +66,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
             <div className="p-4 border-b flex justify-between items-center bg-esocial-blue text-white">
               <div className="flex items-center">
                 <img 
-                  src="/lovable-uploads/5fbfce9a-dae3-444b-99c8-9b92040ef7e2.png" 
-                  alt="Sintonia Logo" 
+                  src="/lovable-uploads/d550586d-cad5-4f72-9a59-4bdd27224f50.png" 
+                  alt="Sintoniza Logo" 
                   className="h-8 mr-2" 
                 />
-                <span className="font-semibold text-lg">Sintonia Admin</span>
+                <span className="font-semibold text-lg">Sintoniza Admin</span>
               </div>
               <Button
                 variant="ghost"

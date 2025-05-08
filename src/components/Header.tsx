@@ -12,8 +12,8 @@ const Header: React.FC<HeaderProps> = () => {
   const navigate = useNavigate();
   
   const handleLogout = () => {
-    localStorage.removeItem("sintonia:userType");
-    localStorage.removeItem("sintonia:currentCliente");
+    localStorage.removeItem("sintoniza:userType");
+    localStorage.removeItem("sintoniza:currentCliente");
     navigate("/login");
   };
 
@@ -23,8 +23,8 @@ const Header: React.FC<HeaderProps> = () => {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
             <img
-              src="/lovable-uploads/5fbfce9a-dae3-444b-99c8-9b92040ef7e2.png"
-              alt="Sintonia Logo"
+              src="/lovable-uploads/d550586d-cad5-4f72-9a59-4bdd27224f50.png"
+              alt="Sintoniza Logo"
               className="h-8 mr-2 md:hidden"
             />
           </div>
@@ -53,4 +53,3 @@ const Header: React.FC<HeaderProps> = () => {
 };
 
 export default Header;
-

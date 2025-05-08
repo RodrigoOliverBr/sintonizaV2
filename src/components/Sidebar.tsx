@@ -10,8 +10,8 @@ const Sidebar = () => {
   const location = useLocation();
 
   const handleLogout = () => {
-    localStorage.removeItem("sintonia:userType");
-    localStorage.removeItem("sintonia:currentCliente");
+    localStorage.removeItem("sintoniza:userType");
+    localStorage.removeItem("sintoniza:currentCliente");
     window.location.href = "/login";
   };
 
@@ -19,8 +19,8 @@ const Sidebar = () => {
     <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 flex-col border-r bg-white md:flex">
       <div className="flex h-16 items-center justify-center border-b px-6">
         <img
-          src="/lovable-uploads/5fbfce9a-dae3-444b-99c8-9b92040ef7e2.png"
-          alt="Sintonia Logo"
+          src="/lovable-uploads/d550586d-cad5-4f72-9a59-4bdd27224f50.png"
+          alt="Sintoniza Logo"
           className="h-10"
         />
       </div>

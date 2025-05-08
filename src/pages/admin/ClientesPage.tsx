@@ -1,6 +1,6 @@
+
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { PlusCircle, Search, Edit, Trash, Eye, UserCheck, Download } from "lucide-react";
+import { PlusCircle, Search, Edit, Trash } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +28,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import {
@@ -39,9 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { 
   getClientes, 
@@ -50,7 +47,6 @@ import {
   deleteCliente 
 } from "@/services/adminService";
 import { Cliente, TipoPessoa, ClienteStatus } from "@/types/admin";
-import ClienteFormularios from "@/components/admin/ClienteFormularios";
 
 const ClientesPage = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -60,9 +56,6 @@ const ClientesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | ClienteStatus>("todos");
   const [currentCliente, setCurrentCliente] = useState<Cliente | null>(null);
-  const [detailsCliente, setDetailsCliente] = useState<Cliente | null>(null);
-  const [activeTab, setActiveTab] = useState("detalhes");
-  const navigate = useNavigate();
   
   // Form states
   const [nome, setNome] = useState("");
@@ -97,11 +90,6 @@ const ClientesPage = () => {
     setCurrentCliente(cliente);
     fillForm(cliente);
     setIsFormDialogOpen(true);
-  };
-
-  const handleViewCliente = (cliente: Cliente) => {
-    setDetailsCliente(cliente);
-    setActiveTab("detalhes");
   };
 
   const handleSaveCliente = () => {
@@ -195,17 +183,6 @@ const ClientesPage = () => {
     setContato("");
   };
 
-  const handleLoginAsCliente = (cliente: Cliente) => {
-    if (cliente.situacao !== "liberado") {
-      toast.error("Este cliente está bloqueado e não pode ser acessado");
-      return;
-    }
-
-    localStorage.setItem("sintonia:userType", "cliente");
-    localStorage.setItem("sintonia:currentCliente", JSON.stringify(cliente));
-    navigate("/");
-  };
-
   const filteredClientes = clientes
     .filter((cliente) =>
       cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -218,17 +195,18 @@ const ClientesPage = () => {
 
   return (
     <AdminLayout title="Clientes">
-      <div className="mb-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row items-center gap-4 justify-between">
+          <div className="w-full sm:w-auto flex-1">
             <Input
               placeholder="Buscar cliente..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
+              icon={<Search className="h-4 w-4 text-muted-foreground" />}
             />
           </div>
-          <div>
+          <div className="w-full sm:w-auto flex-1">
             <Select
               value={statusFilter}
               onValueChange={(value: any) => setStatusFilter(value)}
@@ -243,209 +221,66 @@ const ClientesPage = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="text-right">
-            <Button onClick={handleAddCliente}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Novo Cliente
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Lista de clientes */}
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Lista de Clientes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="max-h-[calc(100vh-220px)] overflow-y-auto pr-2">
-                {filteredClientes.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Nenhum cliente encontrado
-                  </div>
-                ) : (
-                  filteredClientes.map((cliente) => (
-                    <div
-                      key={cliente.id}
-                      className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors ${
-                        detailsCliente?.id === cliente.id ? "bg-muted" : ""
-                      }`}
-                      onClick={() => handleViewCliente(cliente)}
-                    >
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-medium">{cliente.nome}</h3>
-                        <Badge
-                          variant={
-                            cliente.situacao === "liberado"
-                              ? "outline"
-                              : "destructive"
-                          }
-                        >
-                          {cliente.situacao === "liberado"
-                            ? "Liberado"
-                            : "Bloqueado"}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {cliente.email}
-                      </p>
-                      <div className="mt-2 text-xs flex justify-between items-center text-muted-foreground">
-                        <span>
-                          Incluído em:{" "}
-                          {new Date(cliente.dataInclusao).toLocaleDateString()}
-                        </span>
-                        <div className="flex space-x-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditCliente(cliente);
-                            }}
-                            className="p-1 hover:text-primary"
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              confirmDelete(cliente.id);
-                            }}
-                            className="p-1 hover:text-destructive"
-                          >
-                            <Trash size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <Button onClick={handleAddCliente}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Novo Cliente
+          </Button>
         </div>
 
-        {/* Detalhes do cliente */}
-        <div className="md:col-span-2">
-          {detailsCliente ? (
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>{detailsCliente.nome}</CardTitle>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditCliente(detailsCliente)}
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Editar
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => handleLoginAsCliente(detailsCliente)}
-                    >
-                      <UserCheck className="h-4 w-4 mr-1" />
-                      Acessar
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="mb-4">
-                    <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
-                    <TabsTrigger value="formularios">Formulários</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="detalhes">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm font-medium">Tipo de Pessoa</p>
-                        <p className="text-sm text-muted-foreground">
-                          {detailsCliente.tipo === "juridica"
-                            ? "Pessoa Jurídica"
-                            : "Pessoa Física"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">CPF/CNPJ</p>
-                        <p className="text-sm text-muted-foreground">
-                          {detailsCliente.cpfCnpj}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Email</p>
-                        <p className="text-sm text-muted-foreground">
-                          {detailsCliente.email}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Telefone</p>
-                        <p className="text-sm text-muted-foreground">
-                          {detailsCliente.telefone || "Não informado"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Contato</p>
-                        <p className="text-sm text-muted-foreground">
-                          {detailsCliente.contato || "Não informado"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Número de Empregados</p>
-                        <p className="text-sm text-muted-foreground">
-                          {detailsCliente.numeroEmpregados}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Endereço</p>
-                        <p className="text-sm text-muted-foreground">
-                          {detailsCliente.endereco}, {detailsCliente.cidade} - {detailsCliente.estado}, {detailsCliente.cep}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Status</p>
-                        <Badge
-                          variant={
-                            detailsCliente.situacao === "liberado"
-                              ? "outline"
-                              : "destructive"
-                          }
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead className="hidden md:table-cell">CPF/CNPJ</TableHead>
+                <TableHead className="hidden md:table-cell">Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredClientes.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    Nenhum cliente encontrado.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredClientes.map((cliente) => (
+                  <TableRow key={cliente.id}>
+                    <TableCell className="font-medium">{cliente.nome}</TableCell>
+                    <TableCell>{cliente.email}</TableCell>
+                    <TableCell className="hidden md:table-cell">{cliente.cpfCnpj}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Badge
+                        variant={cliente.situacao === "liberado" ? "outline" : "destructive"}
+                      >
+                        {cliente.situacao === "liberado" ? "Liberado" : "Bloqueado"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditCliente(cliente)}
                         >
-                          {detailsCliente.situacao === "liberado"
-                            ? "Liberado"
-                            : "Bloqueado"}
-                        </Badge>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => confirmDelete(cliente.id)}
+                        >
+                          <Trash className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">Data de Inclusão</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(detailsCliente.dataInclusao).toLocaleDateString()}{" "}
-                          {new Date(detailsCliente.dataInclusao).toLocaleTimeString()}
-                        </p>
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="formularios">
-                    <ClienteFormularios clienteId={detailsCliente.id} />
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full p-8 border rounded-lg border-dashed">
-              <div className="text-center">
-                <h3 className="mb-2 text-xl font-semibold">
-                  Selecione um cliente
-                </h3>
-                <p className="text-muted-foreground">
-                  Clique em um cliente para ver seus detalhes
-                </p>
-              </div>
-            </div>
-          )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       </div>
 

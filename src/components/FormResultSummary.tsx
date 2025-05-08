@@ -178,11 +178,11 @@ const FormResultSummary: React.FC<FormResultSummaryProps> = ({ result, employee 
           </div>
           <div>
             <p className="text-sm text-gray-500">E-mail</p>
-            <p className="font-medium">{employee.email}</p>
+            <p className="font-medium">{employee.email || "Não informado"}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Cargo</p>
-            <p className="font-medium">{employee.jobTitle}</p>
+            <p className="font-medium">{employee.jobRole || "Não informado"}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Data da Avaliação</p>

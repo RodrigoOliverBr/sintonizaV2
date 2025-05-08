@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PlusCircle, Search, Edit, Trash, Eye, UserCheck, Download } from "lucide-react";
@@ -48,11 +47,9 @@ import {
   getClientes, 
   addCliente, 
   updateCliente, 
-  deleteCliente, 
-  Cliente, 
-  TipoPessoa, 
-  ClienteStatus 
+  deleteCliente 
 } from "@/services/adminService";
+import { Cliente, TipoPessoa, ClienteStatus } from "@/types/admin";
 import ClienteFormularios from "@/components/admin/ClienteFormularios";
 
 const ClientesPage = () => {

@@ -1,6 +1,6 @@
 
 import { FormTemplate } from '@/types/admin';
-import { FormData, FormSection } from '@/types/form';
+import { FormData, FormSection, Question, SeverityLevel } from '@/types/form';
 import { formData } from '@/data/formData';
 
 // Key de localStorage
@@ -140,4 +140,328 @@ export const duplicateFormTemplate = (id: string): FormTemplate => {
 // Atribuir formulários a um cliente
 export const assignFormTemplatesToClient = (clienteId: string, templateIds: string[]): void => {
   // Esta função será implementada no adminService.ts para modificar o objeto Cliente
+};
+
+// Funcoes para gerenciamento de secoes e perguntas
+
+// Adicionar seção a um template
+export const addSectionToTemplate = (templateId: string, section: Omit<FormSection, 'questions'>): FormTemplate | undefined => {
+  const template = getFormTemplateById(templateId);
+  
+  if (!template) {
+    throw new Error("Formulário não encontrado");
+  }
+  
+  const newSection: FormSection = {
+    ...section,
+    questions: []
+  };
+  
+  const updatedTemplate: FormTemplate = {
+    ...template,
+    secoes: [...template.secoes, newSection],
+    ultimaAtualizacao: Date.now()
+  };
+  
+  updateFormTemplate(updatedTemplate);
+  return updatedTemplate;
+};
+
+// Atualizar seção
+export const updateSection = (templateId: string, sectionIndex: number, section: Omit<FormSection, 'questions'>): FormTemplate | undefined => {
+  const template = getFormTemplateById(templateId);
+  
+  if (!template) {
+    throw new Error("Formulário não encontrado");
+  }
+  
+  if (sectionIndex < 0 || sectionIndex >= template.secoes.length) {
+    throw new Error("Seção não encontrada");
+  }
+  
+  const updatedSections = [...template.secoes];
+  updatedSections[sectionIndex] = {
+    ...updatedSections[sectionIndex],
+    ...section
+  };
+  
+  const updatedTemplate: FormTemplate = {
+    ...template,
+    secoes: updatedSections,
+    ultimaAtualizacao: Date.now()
+  };
+  
+  updateFormTemplate(updatedTemplate);
+  return updatedTemplate;
+};
+
+// Excluir seção
+export const deleteSection = (templateId: string, sectionIndex: number): FormTemplate | undefined => {
+  const template = getFormTemplateById(templateId);
+  
+  if (!template) {
+    throw new Error("Formulário não encontrado");
+  }
+  
+  if (sectionIndex < 0 || sectionIndex >= template.secoes.length) {
+    throw new Error("Seção não encontrada");
+  }
+  
+  const updatedSections = template.secoes.filter((_, index) => index !== sectionIndex);
+  
+  const updatedTemplate: FormTemplate = {
+    ...template,
+    secoes: updatedSections,
+    ultimaAtualizacao: Date.now()
+  };
+  
+  updateFormTemplate(updatedTemplate);
+  return updatedTemplate;
+};
+
+// Adicionar pergunta a uma seção
+export const addQuestionToSection = (
+  templateId: string, 
+  sectionIndex: number, 
+  question: Omit<Question, 'id'>
+): FormTemplate | undefined => {
+  const template = getFormTemplateById(templateId);
+  
+  if (!template) {
+    throw new Error("Formulário não encontrado");
+  }
+  
+  if (sectionIndex < 0 || sectionIndex >= template.secoes.length) {
+    throw new Error("Seção não encontrada");
+  }
+  
+  // Gerar um novo ID para a pergunta
+  const allQuestions = template.secoes.flatMap(s => s.questions);
+  const maxId = allQuestions.reduce((max, q) => Math.max(max, q.id), 0);
+  const newId = maxId + 1;
+  
+  const newQuestion: Question = {
+    ...question,
+    id: newId
+  };
+  
+  const updatedSections = [...template.secoes];
+  updatedSections[sectionIndex] = {
+    ...updatedSections[sectionIndex],
+    questions: [...updatedSections[sectionIndex].questions, newQuestion]
+  };
+  
+  const updatedTemplate: FormTemplate = {
+    ...template,
+    secoes: updatedSections,
+    ultimaAtualizacao: Date.now()
+  };
+  
+  updateFormTemplate(updatedTemplate);
+  return updatedTemplate;
+};
+
+// Atualizar pergunta
+export const updateQuestion = (
+  templateId: string, 
+  sectionIndex: number,
+  questionId: number,
+  questionData: Partial<Omit<Question, 'id'>>
+): FormTemplate | undefined => {
+  const template = getFormTemplateById(templateId);
+  
+  if (!template) {
+    throw new Error("Formulário não encontrado");
+  }
+  
+  if (sectionIndex < 0 || sectionIndex >= template.secoes.length) {
+    throw new Error("Seção não encontrada");
+  }
+  
+  const questionIndex = template.secoes[sectionIndex].questions.findIndex(q => q.id === questionId);
+  if (questionIndex === -1) {
+    throw new Error("Pergunta não encontrada");
+  }
+  
+  const updatedSections = [...template.secoes];
+  updatedSections[sectionIndex] = {
+    ...updatedSections[sectionIndex],
+    questions: [
+      ...updatedSections[sectionIndex].questions.slice(0, questionIndex),
+      {
+        ...updatedSections[sectionIndex].questions[questionIndex],
+        ...questionData
+      },
+      ...updatedSections[sectionIndex].questions.slice(questionIndex + 1)
+    ]
+  };
+  
+  const updatedTemplate: FormTemplate = {
+    ...template,
+    secoes: updatedSections,
+    ultimaAtualizacao: Date.now()
+  };
+  
+  updateFormTemplate(updatedTemplate);
+  return updatedTemplate;
+};
+
+// Excluir pergunta
+export const deleteQuestion = (
+  templateId: string, 
+  sectionIndex: number,
+  questionId: number
+): FormTemplate | undefined => {
+  const template = getFormTemplateById(templateId);
+  
+  if (!template) {
+    throw new Error("Formulário não encontrado");
+  }
+  
+  if (sectionIndex < 0 || sectionIndex >= template.secoes.length) {
+    throw new Error("Seção não encontrada");
+  }
+  
+  const updatedSections = [...template.secoes];
+  updatedSections[sectionIndex] = {
+    ...updatedSections[sectionIndex],
+    questions: updatedSections[sectionIndex].questions.filter(q => q.id !== questionId)
+  };
+  
+  const updatedTemplate: FormTemplate = {
+    ...template,
+    secoes: updatedSections,
+    ultimaAtualizacao: Date.now()
+  };
+  
+  updateFormTemplate(updatedTemplate);
+  return updatedTemplate;
+};
+
+// Mover pergunta para outra seção
+export const moveQuestion = (
+  templateId: string,
+  sourceSectionIndex: number,
+  targetSectionIndex: number,
+  questionId: number
+): FormTemplate | undefined => {
+  const template = getFormTemplateById(templateId);
+  
+  if (!template) {
+    throw new Error("Formulário não encontrado");
+  }
+  
+  if (
+    sourceSectionIndex < 0 || 
+    sourceSectionIndex >= template.secoes.length ||
+    targetSectionIndex < 0 || 
+    targetSectionIndex >= template.secoes.length
+  ) {
+    throw new Error("Seção não encontrada");
+  }
+  
+  // Encontrar a pergunta na seção de origem
+  const question = template.secoes[sourceSectionIndex].questions.find(q => q.id === questionId);
+  if (!question) {
+    throw new Error("Pergunta não encontrada");
+  }
+  
+  // Remover a pergunta da seção de origem
+  const updatedSections = [...template.secoes];
+  updatedSections[sourceSectionIndex] = {
+    ...updatedSections[sourceSectionIndex],
+    questions: updatedSections[sourceSectionIndex].questions.filter(q => q.id !== questionId)
+  };
+  
+  // Adicionar a pergunta à seção de destino
+  updatedSections[targetSectionIndex] = {
+    ...updatedSections[targetSectionIndex],
+    questions: [...updatedSections[targetSectionIndex].questions, question]
+  };
+  
+  const updatedTemplate: FormTemplate = {
+    ...template,
+    secoes: updatedSections,
+    ultimaAtualizacao: Date.now()
+  };
+  
+  updateFormTemplate(updatedTemplate);
+  return updatedTemplate;
+};
+
+// Reordenar seções
+export const reorderSections = (
+  templateId: string,
+  newOrder: number[]
+): FormTemplate | undefined => {
+  const template = getFormTemplateById(templateId);
+  
+  if (!template) {
+    throw new Error("Formulário não encontrado");
+  }
+  
+  if (newOrder.length !== template.secoes.length) {
+    throw new Error("A nova ordem deve conter o mesmo número de seções");
+  }
+  
+  const reorderedSections = newOrder.map(index => {
+    if (index < 0 || index >= template.secoes.length) {
+      throw new Error(`Índice de seção inválido: ${index}`);
+    }
+    return template.secoes[index];
+  });
+  
+  const updatedTemplate: FormTemplate = {
+    ...template,
+    secoes: reorderedSections,
+    ultimaAtualizacao: Date.now()
+  };
+  
+  updateFormTemplate(updatedTemplate);
+  return updatedTemplate;
+};
+
+// Reordenar perguntas dentro de uma seção
+export const reorderQuestions = (
+  templateId: string,
+  sectionIndex: number,
+  newOrder: number[]
+): FormTemplate | undefined => {
+  const template = getFormTemplateById(templateId);
+  
+  if (!template) {
+    throw new Error("Formulário não encontrado");
+  }
+  
+  if (sectionIndex < 0 || sectionIndex >= template.secoes.length) {
+    throw new Error("Seção não encontrada");
+  }
+  
+  const section = template.secoes[sectionIndex];
+  
+  if (newOrder.length !== section.questions.length) {
+    throw new Error("A nova ordem deve conter o mesmo número de perguntas");
+  }
+  
+  const reorderedQuestions = newOrder.map(index => {
+    if (index < 0 || index >= section.questions.length) {
+      throw new Error(`Índice de pergunta inválido: ${index}`);
+    }
+    return section.questions[index];
+  });
+  
+  const updatedSections = [...template.secoes];
+  updatedSections[sectionIndex] = {
+    ...section,
+    questions: reorderedQuestions
+  };
+  
+  const updatedTemplate: FormTemplate = {
+    ...template,
+    secoes: updatedSections,
+    ultimaAtualizacao: Date.now()
+  };
+  
+  updateFormTemplate(updatedTemplate);
+  return updatedTemplate;
 };

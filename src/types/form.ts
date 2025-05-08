@@ -41,6 +41,7 @@ export type StoredFormResult = FormResult & {
   employeeId: string;
   lastUpdated: number; // timestamp
   isComplete: boolean;
+  formTemplateId: string; // Add formTemplateId to associate with specific template
 };
 
 export type FormStatus = 'not-started' | 'in-progress' | 'completed';

@@ -72,7 +72,7 @@ export interface BatchSelection {
   [key: string]: boolean;
 }
 
-// Nova interface para modelos de formulário
+// Interface para modelos de formulário
 export interface FormTemplate {
   id: string;
   nome: string;
@@ -81,5 +81,5 @@ export interface FormTemplate {
   ultimaAtualizacao: number; // timestamp
   ativo: boolean;
   padrao: boolean; // se é o formulário padrão
-  secoes: FormSection[];
+  secoes: import('@/types/form').FormSection[];
 }

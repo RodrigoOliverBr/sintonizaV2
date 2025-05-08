@@ -4,7 +4,7 @@ import Layout from "@/components/Layout";
 import FormSection from "@/components/FormSection";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { FormData, FormResult } from "@/types/form";
+import { FormData, FormResult, FormAnswer } from "@/types/form";
 import { formData as defaultFormData } from "@/data/formData";
 import { getFormResultByEmployeeId, saveFormResult } from "@/services/storageService";
 import { useNavigate } from "react-router-dom";
@@ -20,7 +20,7 @@ const getClienteData = () => {
 
 const FormularioPage = () => {
   const [currentSection, setCurrentSection] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, { answer: boolean | null; observation?: string; selectedOptions?: string[] }>>({});
+  const [answers, setAnswers] = useState<Record<number, FormAnswer>>({});
   const [formTemplates, setFormTemplates] = useState<FormTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
   const [formData, setFormData] = useState<FormData>(defaultFormData);
@@ -107,6 +107,40 @@ const FormularioPage = () => {
     }
   };
 
+  const handleAnswerChange = (questionId: number, value: boolean | null) => {
+    setAnswers({
+      ...answers,
+      [questionId]: { 
+        questionId,
+        answer: value, 
+        observation: answers[questionId]?.observation || "",
+        selectedOptions: answers[questionId]?.selectedOptions || []
+      },
+    });
+  };
+
+  const handleObservationChange = (questionId: number, observation: string) => {
+    setAnswers({
+      ...answers,
+      [questionId]: { 
+        ...answers[questionId],
+        questionId,
+        observation 
+      },
+    });
+  };
+
+  const handleOptionsChange = (questionId: number, options: string[]) => {
+    setAnswers({
+      ...answers,
+      [questionId]: { 
+        ...answers[questionId],
+        questionId,
+        selectedOptions: options 
+      },
+    });
+  };
+
   const handleNext = () => {
     if (currentSection < formData.sections.length - 1) {
       setCurrentSection(currentSection + 1);
@@ -173,7 +207,7 @@ const FormularioPage = () => {
 
       // Criar resultado para salvar
       const result: FormResult = {
-        answers: answers,
+        answers,
         totalYes,
         totalNo,
         severityCounts,
@@ -207,17 +241,6 @@ const FormularioPage = () => {
         variant: "destructive",
       });
     }
-  };
-
-  const handleAnswerChange = (questionId: number, value: boolean | null, observation?: string, selectedOptions?: string[]) => {
-    setAnswers({
-      ...answers,
-      [questionId]: { 
-        answer: value, 
-        observation: observation,
-        selectedOptions: selectedOptions 
-      },
-    });
   };
 
   const currentSectionData = formData.sections[currentSection];
@@ -269,6 +292,8 @@ const FormularioPage = () => {
               section={currentSectionData}
               answers={answers}
               onAnswerChange={handleAnswerChange}
+              onObservationChange={handleObservationChange}
+              onOptionsChange={handleOptionsChange}
             />
 
             <div className="mt-8 flex justify-between">

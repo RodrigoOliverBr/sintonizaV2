@@ -1,6 +1,8 @@
+
 import { Company, Department, Employee, JobRole } from "@/types/cadastro";
 import { FormResult } from "@/types/form";
 import { formData } from "@/data/formData";
+import { getFormTemplateById } from './formTemplateService';
 
 // Keys for localStorage
 const COMPANIES_KEY = "istas21:companies";
@@ -266,7 +268,6 @@ export const saveFormResult = (
   const results = getFormResults();
   
   // Buscar o formulário para calcular se está completo
-  const { getFormTemplateById } = require('./formTemplateService');
   const formTemplate = getFormTemplateById(formTemplateId);
   
   // Se não encontrar o formulário, usa o padrão

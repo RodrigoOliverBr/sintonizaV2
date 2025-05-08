@@ -4,7 +4,6 @@ import { Question, FormAnswer } from "@/types/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import SeverityBadge from "./SeverityBadge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -60,36 +59,6 @@ const QuestionComponent: React.FC<QuestionComponentProps> = ({
               </RadioGroup>
             </div>
           </div>
-
-          {question.options && answer?.answer === true && (
-            <div className="mt-4 border-t pt-4">
-              <p className="text-sm font-medium mb-2">Selecione as situações que ocorreram:</p>
-              <div className="space-y-2">
-                {question.options.map((option) => (
-                  <div key={option.value} className="flex items-start space-x-2">
-                    <Checkbox
-                      id={`option-${question.id}-${option.value}`}
-                      checked={(answer?.selectedOptions || []).includes(option.value)}
-                      onCheckedChange={(checked) => {
-                        const currentOptions = answer?.selectedOptions || [];
-                        if (checked) {
-                          onOptionsChange(question.id, [...currentOptions, option.value]);
-                        } else {
-                          onOptionsChange(question.id, currentOptions.filter((opt) => opt !== option.value));
-                        }
-                      }}
-                    />
-                    <Label
-                      htmlFor={`option-${question.id}-${option.value}`}
-                      className="text-sm leading-tight"
-                    >
-                      {option.label}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {question.showObservation && answer?.answer === true && (
             <div className="mt-4 border-t pt-4">

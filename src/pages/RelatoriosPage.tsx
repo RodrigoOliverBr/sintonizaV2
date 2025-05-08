@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FilterSection from "@/components/relatorios/FilterSection";
 import MapaRiscoPsicossocial from "@/components/relatorios/MapaRiscoPsicossocial";
-import RankingAreasCriticas from "@/components/relatorios/RankingAreasCriticas";
-import DiagnosticoIndividual from "@/components/relatorios/DiagnosticoIndividual";
 import RelatorioPGR from "@/components/relatorios/RelatorioPGR";
 import { getCompanies } from "@/services/storageService";
 import { Download, FileText, RefreshCcw } from "lucide-react";
@@ -71,31 +69,13 @@ export default function RelatoriosPage() {
             </div>
 
             <Tabs defaultValue="mapa-risco" className="w-full">
-              <TabsList className="grid grid-cols-4 mb-6">
+              <TabsList className="grid grid-cols-2 mb-6">
                 <TabsTrigger value="mapa-risco">Mapa de Risco</TabsTrigger>
-                <TabsTrigger value="ranking">Ranking de Áreas</TabsTrigger>
-                <TabsTrigger value="diagnostico">Diagnóstico Individual</TabsTrigger>
                 <TabsTrigger value="pgr">Relatório PGR</TabsTrigger>
               </TabsList>
               
               <TabsContent value="mapa-risco">
                 <MapaRiscoPsicossocial 
-                  companyId={selectedCompanyId}
-                  departmentId=""
-                  dateRange={{}}
-                />
-              </TabsContent>
-              
-              <TabsContent value="ranking">
-                <RankingAreasCriticas
-                  companyId={selectedCompanyId}
-                  departmentId=""
-                  dateRange={{}}
-                />
-              </TabsContent>
-              
-              <TabsContent value="diagnostico">
-                <DiagnosticoIndividual
                   companyId={selectedCompanyId}
                   departmentId=""
                   dateRange={{}}

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -297,6 +296,7 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
                         <Button
                           variant="outline"
                           role="combobox"
+                          type="button" 
                           aria-expanded={openRoleCombobox}
                           className="w-full justify-between"
                           disabled={!companyId}

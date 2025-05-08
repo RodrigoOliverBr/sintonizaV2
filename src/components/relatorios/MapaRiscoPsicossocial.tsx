@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -8,21 +9,11 @@ import {
   Radar, 
   ResponsiveContainer,
   Tooltip,
-  Legend,
-  BarChart as RechartBarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Cell,
-  ReferenceLine,
-  Text
+  Legend
 } from "recharts";
-import { BarChart } from "@/components/ui/BarChart";
-import { getFormResults, getEmployeesByCompany, getDepartmentsByCompany } from "@/services/storageService";
+import { getFormResults, getEmployeesByCompany } from "@/services/storageService";
 import { formData } from "@/data/formData";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Separator } from "@/components/ui/separator";
 
 const dimensoes = [
   "Demandas Psicológicas", 
@@ -72,14 +63,15 @@ const perguntasPorDimensao = {
   ]
 };
 
+// Simulamos dados com contagens de Sim e Não
 const simulatedData = [
-  { dimensao: "Demandas Psicológicas", percentual: 72 },
-  { dimensao: "Organização e Gestão do Trabalho", percentual: 64 },
-  { dimensao: "Trabalho Ativo e Competências", percentual: 45 },
-  { dimensao: "Apoio Social e Liderança", percentual: 58 },
-  { dimensao: "Compensação e Reconhecimento", percentual: 39 },
-  { dimensao: "Dupla Presença", percentual: 51 },
-  { dimensao: "Assédio Moral e Sexual", percentual: 22 }
+  { dimensao: "Demandas Psicológicas", percentual: 72, totalSim: 45, totalNao: 18 },
+  { dimensao: "Organização e Gestão do Trabalho", percentual: 64, totalSim: 38, totalNao: 22 },
+  { dimensao: "Trabalho Ativo e Competências", percentual: 45, totalSim: 27, totalNao: 33 },
+  { dimensao: "Apoio Social e Liderança", percentual: 58, totalSim: 35, totalNao: 25 },
+  { dimensao: "Compensação e Reconhecimento", percentual: 39, totalSim: 24, totalNao: 37 },
+  { dimensao: "Dupla Presença", percentual: 51, totalSim: 30, totalNao: 29 },
+  { dimensao: "Assédio Moral e Sexual", percentual: 22, totalSim: 13, totalNao: 47 }
 ];
 
 const radarData = simulatedData.map(item => ({
@@ -106,23 +98,6 @@ const getTextColor = (value: number) => {
   return "text-red-800"; // Vermelho escuro para valores acima de 30%
 };
 
-const CustomizedAxisTick = (props: any) => {
-  const { x, y, payload } = props;
-  
-  return (
-    <Text 
-      x={x} 
-      y={y} 
-      textAnchor="middle" 
-      verticalAnchor="start" 
-      fontSize={12}
-      fill="#666"
-    >
-      {payload.value}
-    </Text>
-  );
-};
-
 interface MapaRiscoPsicossocialProps {
   companyId: string;
   departmentId: string;
@@ -139,7 +114,9 @@ export default function MapaRiscoPsicossocial({
   // Dados por dimensão para o gráfico de barras
   const barData = simulatedData.map(item => ({
     dimensao: item.dimensao,
-    percentual: item.percentual
+    percentual: item.percentual,
+    totalSim: item.totalSim,
+    totalNao: item.totalNao
   }));
 
   // Cores para o gráfico de barras baseado no nível de risco
@@ -196,6 +173,8 @@ export default function MapaRiscoPsicossocial({
               <TableRow>
                 <TableHead>Dimensão</TableHead>
                 <TableHead className="text-center">Percentual</TableHead>
+                <TableHead className="text-center">Sim</TableHead>
+                <TableHead className="text-center">Não</TableHead>
                 <TableHead className="text-center">Escala Visual</TableHead>
               </TableRow>
             </TableHeader>
@@ -206,6 +185,8 @@ export default function MapaRiscoPsicossocial({
                   <TableCell className={`text-center font-bold ${getTextColor(item.percentual)}`}>
                     {item.percentual}%
                   </TableCell>
+                  <TableCell className="text-center">{item.totalSim}</TableCell>
+                  <TableCell className="text-center">{item.totalNao}</TableCell>
                   <TableCell>
                     <div className="flex items-center">
                       <div className="w-full bg-gray-200 rounded-full h-4">
@@ -232,7 +213,7 @@ export default function MapaRiscoPsicossocial({
 
       <Card className="lg:col-span-2">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Análise por Dimensão e Setor (Mapa de Calor)</CardTitle>
+          <CardTitle className="text-lg">Análise por Dimensão</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -240,44 +221,47 @@ export default function MapaRiscoPsicossocial({
               <TableHeader>
                 <TableRow>
                   <TableHead className="min-w-[250px]">Dimensão / Pergunta</TableHead>
-                  {getDepartmentsByCompany(companyId).map(dept => (
-                    <TableHead key={dept.id} className="text-center">
-                      {dept.name}
-                    </TableHead>
-                  ))}
+                  <TableHead className="text-center">Risco (%)</TableHead>
+                  <TableHead className="text-center">Respostas "Sim"</TableHead>
+                  <TableHead className="text-center">Respostas "Não"</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {dimensoes.map((dimensao, dimIdx) => {
                   const perguntas = perguntasPorDimensao[dimensao as keyof typeof perguntasPorDimensao] || [];
+                  const dimensaoData = simulatedData.find(d => d.dimensao === dimensao);
+                  
                   return (
                     <React.Fragment key={dimensao}>
                       <TableRow className="bg-muted/30 font-medium">
-                        <TableCell colSpan={getDepartmentsByCompany(companyId).length + 1}>
-                          {dimensao}
+                        <TableCell>{dimensao}</TableCell>
+                        <TableCell className="text-center">
+                          <span className={`font-bold ${getTextColor(dimensaoData?.percentual || 0)}`}>
+                            {dimensaoData?.percentual || 0}%
+                          </span>
                         </TableCell>
+                        <TableCell className="text-center">{dimensaoData?.totalSim || 0}</TableCell>
+                        <TableCell className="text-center">{dimensaoData?.totalNao || 0}</TableCell>
                       </TableRow>
-                      {perguntas.map((pergunta, qIdx) => (
-                        <TableRow key={`${dimensao}-${qIdx}`}>
-                          <TableCell className="pl-8 text-sm">
-                            {pergunta}
-                          </TableCell>
-                          {getDepartmentsByCompany(companyId).map(dept => {
-                            const randomValue = Math.floor(Math.random() * 100);
-                            return (
-                              <TableCell key={dept.id} className="text-center">
-                                <div className="flex items-center justify-center">
-                                  <div 
-                                    className="w-8 h-8 rounded-full mr-2" 
-                                    style={{ backgroundColor: getRiskColor(randomValue) }}
-                                  />
-                                  <span>{randomValue}%</span>
-                                </div>
-                              </TableCell>
-                            );
-                          })}
-                        </TableRow>
-                      ))}
+                      {perguntas.map((pergunta, qIdx) => {
+                        // Simular dados para cada pergunta
+                        const randomSim = Math.floor(Math.random() * 20) + 1;
+                        const randomNao = Math.floor(Math.random() * 20) + 1;
+                        const randomPercent = Math.floor((randomSim / (randomSim + randomNao)) * 100);
+                        
+                        return (
+                          <TableRow key={`${dimensao}-${qIdx}`}>
+                            <TableCell className="pl-8 text-sm">{pergunta}</TableCell>
+                            <TableCell className="text-center">
+                              <span className={`${getTextColor(randomPercent)}`}>
+                                {randomPercent}%
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">{randomSim}</TableCell>
+                            <TableCell className="text-center">{randomNao}</TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </React.Fragment>
                   );
                 })}

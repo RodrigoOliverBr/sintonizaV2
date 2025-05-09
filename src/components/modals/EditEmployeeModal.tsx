@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -119,12 +118,13 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({
     }
     
     const updatedEmployee: Employee = {
-      id: employee.id,
+      ...employee,
       name,
       cpf,
       roleId,
       companyId,
-      departmentId
+      departmentId,
+      updatedAt: new Date().toISOString() // Update the updatedAt timestamp
     };
     
     updateEmployee(updatedEmployee);

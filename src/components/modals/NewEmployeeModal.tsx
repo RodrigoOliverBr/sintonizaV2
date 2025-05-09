@@ -159,7 +159,10 @@ const NewEmployeeModal: React.FC<NewEmployeeModalProps> = ({
       cpf,
       roleId,
       companyId,
-      departmentId
+      departmentId,
+      active: true, // Set default to active
+      createdAt: new Date().toISOString(), // Set current timestamp
+      updatedAt: new Date().toISOString() // Set current timestamp
     });
     
     toast({

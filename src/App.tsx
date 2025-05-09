@@ -19,6 +19,7 @@ import ContratosPage from "./pages/admin/ContratosPage";
 import FaturamentoPage from "./pages/admin/FaturamentoPage";
 import FormulariosPage from "./pages/admin/FormulariosPage";
 import { useEffect, useState } from "react";
+import Index from "./pages/Index";
 
 const queryClient = new QueryClient();
 
@@ -54,9 +55,19 @@ const App = () => {
           {/* Rota de Login (pública) */}
           <Route path="/login" element={<LoginPage />} />
           
-          {/* Rotas do sistema cliente */}
+          {/* Página inicial */}
           <Route 
             path="/" 
+            element={
+              isAuthenticated ? 
+              <Index /> : 
+              <Navigate to="/login" replace />
+            } 
+          />
+          
+          {/* Rotas do sistema cliente */}
+          <Route 
+            path="/formulario" 
             element={
               <ProtectedRoute userType="all">
                 <FormularioPage />
@@ -159,16 +170,6 @@ const App = () => {
               <ProtectedRoute userType="admin">
                 <FaturamentoPage />
               </ProtectedRoute>
-            } 
-          />
-          
-          {/* Rota inicial redireciona para o login se não autenticado */}
-          <Route 
-            path="/" 
-            element={
-              isAuthenticated ? 
-              <FormularioPage /> : 
-              <Navigate to="/login" replace />
             } 
           />
           

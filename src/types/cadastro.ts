@@ -1,3 +1,4 @@
+
 export interface Company {
   id: string;
   name: string;
@@ -25,8 +26,9 @@ export interface Employee {
   phone?: string;
   address?: string;
   departmentId?: string;
-  email?: string; // Added to fix TypeScript error
-  jobRole?: string; // Added to fix TypeScript error
+  email?: string;
+  jobRole?: string;
+  roleId: string; // Added roleId property to fix TypeScript errors
   companyId: string;
   active: boolean;
   createdAt: string;

@@ -1,17 +1,23 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Pencil, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { mockClients } from "@/services/adminService";
+import { getClientes } from "@/services/adminService";
 
 const ClientesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [clients, setClients] = useState([]);
   
-  const filteredClients = mockClients.filter(client => 
+  useEffect(() => {
+    // Load clients on component mount
+    setClients(getClientes());
+  }, []);
+  
+  const filteredClients = clients.filter(client => 
     client.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -59,13 +65,14 @@ const ClientesPage = () => {
                     <TableCell>{client.plano}</TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        client.status === 'Ativo'
+                        client.situacao === 'liberado'
                           ? 'bg-green-100 text-green-800'
-                          : client.status === 'Pendente'
+                          : client.situacao === 'pendente'
                           ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-red-100 text-red-800'
                       }`}>
-                        {client.status}
+                        {client.situacao === 'liberado' ? 'Ativo' : 
+                         client.situacao === 'pendente' ? 'Pendente' : 'Bloqueado'}
                       </span>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
@@ -91,7 +98,7 @@ const ClientesPage = () => {
         
         <CardFooter className="flex justify-between border-t pt-4">
           <div className="text-sm text-gray-500">
-            Mostrando {filteredClients.length} de {mockClients.length} clientes
+            Mostrando {filteredClients.length} de {clients.length} clientes
           </div>
         </CardFooter>
       </Card>

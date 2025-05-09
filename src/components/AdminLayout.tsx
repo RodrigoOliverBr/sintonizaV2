@@ -30,7 +30,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
           <div className="flex items-center h-16 flex-shrink-0 px-4 border-b bg-esocial-blue">
             <div className="flex items-center">
               <img 
-                src="/lovable-uploads/d550586d-cad5-4f72-9a59-4bdd27224f50.png" 
+                src="/lovable-uploads/467d0f94-3316-431e-9165-a18c71f42a98.png" 
                 alt="Sintoniza Logo" 
                 className="h-10 mr-2" 
               />
@@ -66,7 +66,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
             <div className="p-4 border-b flex justify-between items-center bg-esocial-blue text-white">
               <div className="flex items-center">
                 <img 
-                  src="/lovable-uploads/d550586d-cad5-4f72-9a59-4bdd27224f50.png" 
+                  src="/lovable-uploads/467d0f94-3316-431e-9165-a18c71f42a98.png" 
                   alt="Sintoniza Logo" 
                   className="h-8 mr-2" 
                 />

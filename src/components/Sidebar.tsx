@@ -19,7 +19,7 @@ const Sidebar = () => {
     <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 flex-col border-r bg-white md:flex">
       <div className="flex h-16 items-center justify-center border-b px-6">
         <img
-          src="/lovable-uploads/d550586d-cad5-4f72-9a59-4bdd27224f50.png"
+          src="/lovable-uploads/467d0f94-3316-431e-9165-a18c71f42a98.png"
           alt="Sintoniza Logo"
           className="h-10"
         />

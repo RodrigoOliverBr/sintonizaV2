@@ -23,7 +23,7 @@ const Header: React.FC<HeaderProps> = () => {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
             <img
-              src="/lovable-uploads/d550586d-cad5-4f72-9a59-4bdd27224f50.png"
+              src="/lovable-uploads/467d0f94-3316-431e-9165-a18c71f42a98.png"
               alt="Sintoniza Logo"
               className="h-8 mr-2 md:hidden"
             />

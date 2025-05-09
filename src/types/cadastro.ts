@@ -1,4 +1,3 @@
-
 export interface Company {
   id: string;
   name: string;
@@ -21,7 +20,15 @@ export interface Employee {
   id: string;
   name: string;
   cpf: string;
-  roleId: string;
-  departmentId: string;
+  birthday?: string;
+  gender?: string;
+  phone?: string;
+  address?: string;
+  departmentId?: string;
+  email?: string; // Added to fix TypeScript error
+  jobRole?: string; // Added to fix TypeScript error
   companyId: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
 }

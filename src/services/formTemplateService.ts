@@ -1,5 +1,6 @@
 
-import { FormTemplate, FormSection, FormQuestion } from '@/types/admin';
+import { FormTemplate } from '@/types/admin';
+import { FormSection, FormQuestion } from '@/types/form';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock form templates
@@ -116,7 +117,8 @@ export const addSectionToTemplate = (templateId: string, section: Omit<FormSecti
 
   const newSection: FormSection = {
     ...section,
-    id: uuidv4()
+    id: uuidv4(),
+    questions: section.questions || []
   };
 
   template.secoes.push(newSection);
@@ -177,7 +179,7 @@ export const addQuestionToSection = (
 
   const newQuestion: FormQuestion = {
     ...question,
-    id: uuidv4()
+    id: parseInt(uuidv4().substring(0, 8), 16) // Generate a numeric ID from UUID
   };
 
   section.questions = section.questions || [];
@@ -216,7 +218,7 @@ export const updateQuestion = (
 export const deleteQuestion = (
   templateId: string, 
   sectionId: string, 
-  questionId: string
+  questionId: number
 ): FormTemplate => {
   const template = getFormTemplateById(templateId);
   if (!template) {
@@ -272,7 +274,7 @@ export const reorderSections = (templateId: string, orderedSectionIds: string[])
 export const reorderQuestions = (
   templateId: string, 
   sectionId: string, 
-  orderedQuestionIds: string[]
+  orderedQuestionIds: number[]
 ): FormTemplate => {
   const template = getFormTemplateById(templateId);
   if (!template) {
@@ -293,7 +295,7 @@ export const reorderQuestions = (
   const questionsMap = section.questions.reduce((acc, question) => {
     acc[question.id] = question;
     return acc;
-  }, {} as Record<string, FormQuestion>);
+  }, {} as Record<number, FormQuestion>);
 
   // Reordenar as perguntas conforme a ordem fornecida
   section.questions = orderedQuestionIds.map(id => {

@@ -24,7 +24,7 @@ import Index from "./pages/Index";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children, userType }: { children: React.ReactNode, userType: 'admin' | 'cliente' | 'all' }) => {
-  const currentUserType = localStorage.getItem("sintonia:userType") || "";
+  const currentUserType = localStorage.getItem("sintoniza:userType") || "";
   
   if (!currentUserType) {
     return <Navigate to="/login" replace />;
@@ -42,7 +42,7 @@ const App = () => {
   
   useEffect(() => {
     // Verificar autenticação no carregamento inicial
-    const userType = localStorage.getItem("sintonia:userType");
+    const userType = localStorage.getItem("sintoniza:userType");
     setIsAuthenticated(!!userType);
   }, []);
   

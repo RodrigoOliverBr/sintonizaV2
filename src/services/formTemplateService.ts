@@ -1,6 +1,6 @@
 
 import { FormTemplate } from '@/types/admin';
-import { FormSection, FormQuestion } from '@/types/form';
+import { FormSection, Question as FormQuestion } from '@/types/form';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock form templates
@@ -117,7 +117,6 @@ export const addSectionToTemplate = (templateId: string, section: Omit<FormSecti
 
   const newSection: FormSection = {
     ...section,
-    id: uuidv4(),
     questions: section.questions || []
   };
 
@@ -133,9 +132,9 @@ export const updateSection = (templateId: string, section: FormSection): FormTem
     throw new Error(`Template com ID ${templateId} não encontrado`);
   }
 
-  const sectionIndex = template.secoes.findIndex(s => s.id === section.id);
+  const sectionIndex = template.secoes.findIndex(s => s.title === section.title);
   if (sectionIndex === -1) {
-    throw new Error(`Seção com ID ${section.id} não encontrada no template ${templateId}`);
+    throw new Error(`Seção com título ${section.title} não encontrada no template ${templateId}`);
   }
 
   template.secoes[sectionIndex] = section;
@@ -144,15 +143,15 @@ export const updateSection = (templateId: string, section: FormSection): FormTem
   return template;
 };
 
-export const deleteSection = (templateId: string, sectionId: string): FormTemplate => {
+export const deleteSection = (templateId: string, sectionTitle: string): FormTemplate => {
   const template = getFormTemplateById(templateId);
   if (!template) {
     throw new Error(`Template com ID ${templateId} não encontrado`);
   }
 
-  const sectionIndex = template.secoes.findIndex(s => s.id === sectionId);
+  const sectionIndex = template.secoes.findIndex(s => s.title === sectionTitle);
   if (sectionIndex === -1) {
-    throw new Error(`Seção com ID ${sectionId} não encontrada no template ${templateId}`);
+    throw new Error(`Seção com título ${sectionTitle} não encontrada no template ${templateId}`);
   }
 
   template.secoes.splice(sectionIndex, 1);
@@ -164,7 +163,7 @@ export const deleteSection = (templateId: string, sectionId: string): FormTempla
 // Funções para gerenciamento de perguntas
 export const addQuestionToSection = (
   templateId: string, 
-  sectionId: string, 
+  sectionTitle: string, 
   question: Omit<FormQuestion, 'id'>
 ): FormTemplate => {
   const template = getFormTemplateById(templateId);
@@ -172,9 +171,9 @@ export const addQuestionToSection = (
     throw new Error(`Template com ID ${templateId} não encontrado`);
   }
 
-  const section = template.secoes.find(s => s.id === sectionId);
+  const section = template.secoes.find(s => s.title === sectionTitle);
   if (!section) {
-    throw new Error(`Seção com ID ${sectionId} não encontrada no template ${templateId}`);
+    throw new Error(`Seção com título ${sectionTitle} não encontrada no template ${templateId}`);
   }
 
   const newQuestion: FormQuestion = {
@@ -191,7 +190,7 @@ export const addQuestionToSection = (
 
 export const updateQuestion = (
   templateId: string, 
-  sectionId: string, 
+  sectionTitle: string, 
   question: FormQuestion
 ): FormTemplate => {
   const template = getFormTemplateById(templateId);
@@ -199,14 +198,14 @@ export const updateQuestion = (
     throw new Error(`Template com ID ${templateId} não encontrado`);
   }
 
-  const section = template.secoes.find(s => s.id === sectionId);
+  const section = template.secoes.find(s => s.title === sectionTitle);
   if (!section) {
-    throw new Error(`Seção com ID ${sectionId} não encontrada no template ${templateId}`);
+    throw new Error(`Seção com título ${sectionTitle} não encontrada no template ${templateId}`);
   }
 
   const questionIndex = section.questions.findIndex(q => q.id === question.id);
   if (questionIndex === -1) {
-    throw new Error(`Pergunta com ID ${question.id} não encontrada na seção ${sectionId}`);
+    throw new Error(`Pergunta com ID ${question.id} não encontrada na seção ${sectionTitle}`);
   }
 
   section.questions[questionIndex] = question;
@@ -217,7 +216,7 @@ export const updateQuestion = (
 
 export const deleteQuestion = (
   templateId: string, 
-  sectionId: string, 
+  sectionTitle: string, 
   questionId: number
 ): FormTemplate => {
   const template = getFormTemplateById(templateId);
@@ -225,14 +224,14 @@ export const deleteQuestion = (
     throw new Error(`Template com ID ${templateId} não encontrado`);
   }
 
-  const section = template.secoes.find(s => s.id === sectionId);
+  const section = template.secoes.find(s => s.title === sectionTitle);
   if (!section) {
-    throw new Error(`Seção com ID ${sectionId} não encontrada no template ${templateId}`);
+    throw new Error(`Seção com título ${sectionTitle} não encontrada no template ${templateId}`);
   }
 
   const questionIndex = section.questions.findIndex(q => q.id === questionId);
   if (questionIndex === -1) {
-    throw new Error(`Pergunta com ID ${questionId} não encontrada na seção ${sectionId}`);
+    throw new Error(`Pergunta com ID ${questionId} não encontrada na seção ${sectionTitle}`);
   }
 
   section.questions.splice(questionIndex, 1);
@@ -242,29 +241,29 @@ export const deleteQuestion = (
 };
 
 // Funções de reordenação
-export const reorderSections = (templateId: string, orderedSectionIds: string[]): FormTemplate => {
+export const reorderSections = (templateId: string, orderedSectionTitles: string[]): FormTemplate => {
   const template = getFormTemplateById(templateId);
   if (!template) {
     throw new Error(`Template com ID ${templateId} não encontrado`);
   }
 
-  // Verificar se todos os IDs de seção estão presentes
-  if (orderedSectionIds.length !== template.secoes.length) {
+  // Verificar se todos os títulos de seção estão presentes
+  if (orderedSectionTitles.length !== template.secoes.length) {
     throw new Error("A quantidade de seções na reordenação não corresponde ao template");
   }
 
   // Criar um mapa das seções existentes
   const sectionsMap = template.secoes.reduce((acc, section) => {
-    acc[section.id] = section;
+    acc[section.title] = section;
     return acc;
   }, {} as Record<string, FormSection>);
 
   // Reordenar as seções conforme a ordem fornecida
-  template.secoes = orderedSectionIds.map(id => {
-    if (!sectionsMap[id]) {
-      throw new Error(`Seção com ID ${id} não encontrada no template`);
+  template.secoes = orderedSectionTitles.map(title => {
+    if (!sectionsMap[title]) {
+      throw new Error(`Seção com título ${title} não encontrada no template`);
     }
-    return sectionsMap[id];
+    return sectionsMap[title];
   });
 
   template.ultimaAtualizacao = Date.now();
@@ -273,7 +272,7 @@ export const reorderSections = (templateId: string, orderedSectionIds: string[])
 
 export const reorderQuestions = (
   templateId: string, 
-  sectionId: string, 
+  sectionTitle: string, 
   orderedQuestionIds: number[]
 ): FormTemplate => {
   const template = getFormTemplateById(templateId);
@@ -281,9 +280,9 @@ export const reorderQuestions = (
     throw new Error(`Template com ID ${templateId} não encontrado`);
   }
 
-  const section = template.secoes.find(s => s.id === sectionId);
+  const section = template.secoes.find(s => s.title === sectionTitle);
   if (!section) {
-    throw new Error(`Seção com ID ${sectionId} não encontrada no template ${templateId}`);
+    throw new Error(`Seção com título ${sectionTitle} não encontrada no template ${templateId}`);
   }
 
   // Verificar se todos os IDs de perguntas estão presentes

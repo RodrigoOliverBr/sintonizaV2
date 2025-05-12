@@ -1,4 +1,3 @@
-
 // Implementação de serviços administrativos para autenticação e gerenciamento de clientes
 import { v4 as uuidv4 } from 'uuid';
 import { Cliente, Plano, Contrato, Fatura, StatusFatura, CicloFaturamento, ClienteStatus, StatusContrato, FormTemplate } from '@/types/admin';
@@ -14,6 +13,12 @@ const MOCK_USERS = [
     password: "admin123",
     userType: "admin",
     name: "Administrador"
+  },
+  {
+    email: "admin@sintonia.app",
+    password: "SintoniaAdmin2025!",
+    userType: "admin",
+    name: "Administrador Sintoniza"
   },
   {
     email: "cliente@empresa.com.br",

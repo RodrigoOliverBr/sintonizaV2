@@ -33,28 +33,34 @@ const LoginPage: React.FC = () => {
     // Log para debug
     console.log("Tentando login com:", email, password);
     
-    const result = checkCredentials(email, password);
-    console.log("Resultado da autenticação:", result);
-    
-    if (result.isValid) {
-      localStorage.setItem("sintoniza:userType", result.userType as string);
+    try {
+      const result = checkCredentials(email, password);
+      console.log("Resultado da autenticação:", result);
       
-      if (result.userType === 'cliente' && result.userData) {
-        localStorage.setItem("sintoniza:currentCliente", JSON.stringify(result.userData));
-      }
-      
-      setTimeout(() => {
-        if (result.userType === 'admin') {
-          navigate("/admin/dashboard");
-        } else {
-          navigate("/");
+      if (result.isValid) {
+        localStorage.setItem("sintoniza:userType", result.userType as string);
+        
+        if (result.userType === 'cliente' && result.userData) {
+          localStorage.setItem("sintoniza:currentCliente", JSON.stringify(result.userData));
         }
+        
+        setTimeout(() => {
+          if (result.userType === 'admin') {
+            navigate("/admin/dashboard");
+          } else {
+            navigate("/");
+          }
+          setIsLoading(false);
+        }, 1000);
+        
+        toast.success(`Login realizado com sucesso como ${result.userType === 'admin' ? 'Administrador' : 'Cliente'}`);
+      } else {
+        toast.error("Credenciais inválidas. Verifique seu e-mail e senha.");
         setIsLoading(false);
-      }, 1000);
-      
-      toast.success(`Login realizado com sucesso como ${result.userType === 'admin' ? 'Administrador' : 'Cliente'}`);
-    } else {
-      toast.error("Credenciais inválidas. Verifique seu e-mail e senha.");
+      }
+    } catch (error) {
+      console.error("Erro ao fazer login:", error);
+      toast.error("Ocorreu um erro ao tentar fazer login. Tente novamente.");
       setIsLoading(false);
     }
   };
@@ -116,6 +122,11 @@ const LoginPage: React.FC = () => {
         
         <div className="text-center">
           <p className="text-sm text-gray-500">© 2025 eSocial Brasil. Todos os direitos reservados.</p>
+          <div className="mt-2 text-xs text-gray-400">
+            <p>Acesso de teste:</p>
+            <p>Admin: admin@esocial.com.br / admin123</p>
+            <p>Cliente: cliente@empresa.com.br / cliente123</p>
+          </div>
         </div>
       </div>
     </div>

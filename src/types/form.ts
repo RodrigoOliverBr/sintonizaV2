@@ -1,21 +1,25 @@
-
 export type SeverityLevel = 'LEVEMENTE PREJUDICIAL' | 'PREJUDICIAL' | 'EXTREMAMENTE PREJUDICIAL';
 
-export type FormSection = {
+export interface FormSection {
+  id: string; // Adding id to FormSection
   title: string;
   description?: string;
   questions: Question[];
-};
+}
 
 export type Question = {
   id: number;
   text: string;
-  risk: string; // Added risk field
+  type: string; // Adding type field to Question
+  risk: string;
   severity: SeverityLevel;
   mitigationActions: string[];
   options?: { label: string; value: string }[];
   showObservation?: boolean;
 };
+
+// Re-export FormTemplate from admin.ts to fix circular dependency
+export type FormTemplate = import('@/types/admin').FormTemplate;
 
 export type FormAnswer = {
   questionId: number;

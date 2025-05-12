@@ -1,3 +1,4 @@
+
 export type ClienteStatus = 'liberado' | 'bloqueado' | 'pendente';
 export type TipoPessoa = 'fisica' | 'juridica';
 export type StatusContrato = 'ativo' | 'em-analise' | 'cancelado';
@@ -19,6 +20,7 @@ export interface Cliente {
   estado: string;
   cep: string;
   contato: string;
+  plano?: string; // Added plano property
   formulariosIds?: string[]; // IDs dos formulários disponíveis para este cliente
 }
 

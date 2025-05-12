@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -5,21 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, GripVertical, Copy, ChevronsUpDown } from "lucide-react";
 import {
-  addFormTemplate,
   getFormTemplates,
   updateFormTemplate,
   deleteFormTemplate,
+  addFormTemplate,
   addSection,
   updateSection,
   deleteSection,
-  addQuestion,
-  updateQuestion,
-  deleteQuestion,
+  addQuestion
 } from "@/services/formTemplateService";
-import { FormTemplate, FormSection, Question } from "@/types/form";
+import { FormSection, Question } from "@/types/form";
+import { FormTemplate } from "@/types/admin";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -112,7 +111,15 @@ const FormulariosPage = () => {
       return;
     }
 
-    addSection(selectedTemplate.id, { title: newSectionTitle, description: newSectionDescription, questions: [] });
+    // Create empty questions array with the correct type
+    const emptyQuestions: Question[] = [];
+    
+    addSection(selectedTemplate.id, { 
+      title: newSectionTitle, 
+      description: newSectionDescription, 
+      questions: emptyQuestions 
+    });
+    
     loadFormTemplates();
     setNewSectionTitle("");
     setNewSectionDescription("");
@@ -147,15 +154,29 @@ const FormulariosPage = () => {
       return;
     }
 
-    addQuestion(sectionId, { text: newQuestionText, type: newQuestionType });
-    loadFormTemplates();
+    // First create the question
+    const newQuestion = addQuestion(sectionId, { 
+      text: newQuestionText, 
+      type: newQuestionType 
+    });
+    
+    // Then add it to the section
+    const section = selectedTemplate.secoes.find(sec => sec.id === sectionId);
+    if (section) {
+      // Create a safe copy of questions with proper type
+      const updatedQuestions: Question[] = [...section.questions, newQuestion];
+      
+      // Update the section with the new question
+      handleUpdateSection(sectionId, { questions: updatedQuestions });
+    }
+    
     setNewQuestionText("");
     setNewQuestionType("text");
     setIsAddingQuestion(false);
     toast.success("Pergunta adicionada com sucesso!");
   };
 
-  const handleUpdateQuestion = (sectionId: string, questionId: string, updatedQuestion: Partial<Question>) => {
+  const handleUpdateQuestion = (sectionId: string, questionId: number, updatedQuestion: Partial<Question>) => {
     if (!selectedTemplate) return;
 
     const section = selectedTemplate.secoes.find(sec => sec.id === sectionId);
@@ -164,36 +185,51 @@ const FormulariosPage = () => {
     const questionToUpdate = section.questions.find(q => q.id === questionId);
     if (!questionToUpdate) return;
 
-    const updatedQuestionData = { ...questionToUpdate, ...updatedQuestion };
-    updateQuestion(sectionId, updatedQuestionData);
-    loadFormTemplates();
+    // Create a proper updated question object
+    const updatedQuestionData: Question = { 
+      ...questionToUpdate, 
+      ...updatedQuestion 
+    };
+    
+    // Create a new questions array for the section
+    const updatedQuestions = section.questions.map(q => 
+      q.id === questionId ? updatedQuestionData : q
+    );
+    
+    // Update the section with the new questions array
+    handleUpdateSection(sectionId, { questions: updatedQuestions });
     toast.success("Pergunta atualizada com sucesso!");
   };
 
-  const handleDeleteQuestion = (sectionId: string, questionId: string) => {
+  const handleDeleteQuestion = (sectionId: string, questionId: number) => {
     if (!selectedTemplate) return;
 
-    deleteQuestion(sectionId, questionId);
-    loadFormTemplates();
+    const section = selectedTemplate.secoes.find(sec => sec.id === sectionId);
+    if (!section) return;
+
+    // Filter out the question to be deleted
+    const updatedQuestions = section.questions.filter(q => q.id !== questionId);
+    
+    // Update the section with the new questions
+    handleUpdateSection(sectionId, { questions: updatedQuestions });
     toast.success("Pergunta excluída com sucesso!");
   };
 
   const handleOnDragEnd = (result: any) => {
     if (!selectedTemplate) return;
-
     if (!result.destination) return;
 
     const { source, destination } = result;
 
     if (source.droppableId !== destination.droppableId) {
-      // Reorder questions within a section
+      // Reorder questions within different sections
       const sourceSection = selectedTemplate.secoes.find(sec => sec.id === source.droppableId);
       const destSection = selectedTemplate.secoes.find(sec => sec.id === destination.droppableId);
 
       if (!sourceSection || !destSection) return;
 
-      const sourceQuestions = Array.from(sourceSection.questions);
-      const destQuestions = Array.from(destSection.questions);
+      const sourceQuestions: Question[] = Array.from(sourceSection.questions);
+      const destQuestions: Question[] = Array.from(destSection.questions);
       const [removed] = sourceQuestions.splice(source.index, 1);
 
       destQuestions.splice(destination.index, 0, removed);
@@ -201,12 +237,15 @@ const FormulariosPage = () => {
       handleUpdateSection(source.droppableId, { questions: sourceQuestions });
       handleUpdateSection(destination.droppableId, { questions: destQuestions });
     } else {
-      // Reorder sections
-      const questions = Array.from(selectedTemplate.secoes.find(sec => sec.id === source.droppableId)!.questions);
+      // Reorder questions within same section
+      const section = selectedTemplate.secoes.find(sec => sec.id === source.droppableId);
+      if (!section) return;
+      
+      const questions: Question[] = Array.from(section.questions);
       const [removed] = questions.splice(source.index, 1);
       questions.splice(destination.index, 0, removed);
 
-      handleUpdateSection(source.droppableId, { questions: questions });
+      handleUpdateSection(source.droppableId, { questions });
     }
   };
 
@@ -276,7 +315,7 @@ const FormulariosPage = () => {
                     {/* Seções do Formulário */}
                     <h4 className="text-md font-semibold mt-4">Seções do Formulário</h4>
                     <DragDropContext onDragEnd={handleOnDragEnd}>
-                      <Accordion type="multiple" collapsible>
+                      <Accordion type="multiple">
                         {selectedTemplate.secoes.map((section, index) => (
                           <AccordionItem value={section.id} key={section.id}>
                             <AccordionTrigger>
@@ -298,7 +337,7 @@ const FormulariosPage = () => {
                                     onClick={() => {
                                       setEditingSectionId(section.id);
                                       setNewSectionTitle(section.title);
-                                      setNewSectionDescription(section.description);
+                                      setNewSectionDescription(section.description || "");
                                     }}
                                   >
                                     Editar Seção
@@ -324,7 +363,7 @@ const FormulariosPage = () => {
                                       {section.questions.map((question, questionIndex) => (
                                         <Draggable
                                           key={question.id}
-                                          draggableId={question.id}
+                                          draggableId={String(question.id)}
                                           index={questionIndex}
                                         >
                                           {(provided) => (
@@ -343,7 +382,7 @@ const FormulariosPage = () => {
                                                   variant="outline"
                                                   size="icon"
                                                   onClick={() => {
-                                                    setEditingQuestionId(question.id);
+                                                    setEditingQuestionId(String(question.id));
                                                     setNewQuestionText(question.text);
                                                     setNewQuestionType(question.type);
                                                   }}
@@ -532,9 +571,15 @@ const FormulariosPage = () => {
               </Button>
               <Button onClick={() => {
                 if (selectedTemplate) {
-                  const section = selectedTemplate.secoes.find(sec => sec.questions.find(q => q.id === editingQuestionId));
+                  const section = selectedTemplate.secoes.find(sec => 
+                    sec.questions.find(q => String(q.id) === editingQuestionId)
+                  );
                   if (section) {
-                    handleUpdateQuestion(section.id, editingQuestionId, { text: newQuestionText, type: newQuestionType });
+                    handleUpdateQuestion(
+                      section.id, 
+                      parseInt(editingQuestionId), 
+                      { text: newQuestionText, type: newQuestionType }
+                    );
                   }
                 }
                 setEditingQuestionId(null);

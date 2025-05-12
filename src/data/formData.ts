@@ -4,6 +4,7 @@ import { FormData, SeverityLevel } from '../types/form';
 export const formData: FormData = {
   sections: [
     {
+      id: "demandas-psicologicas",
       title: "Demandas Psicológicas",
       description: "Avalie os últimos 14 dias (últimas duas semanas)",
       questions: [
@@ -11,6 +12,7 @@ export const formData: FormData = {
           id: 1,
           risk: "Pressão por Metas e Produtividade",
           text: "Você se sentiu frequentemente pressionado para cumprir prazos ou metas que considera difíceis ou impossíveis?",
+          type: "boolean",
           severity: "PREJUDICIAL",
           mitigationActions: [
             "Reavaliar as metas e prazos definidos, ajustando-os para níveis alcançáveis.",
@@ -22,6 +24,7 @@ export const formData: FormData = {
           id: 2,
           risk: "Ansiedade por Decisões Complexas",
           text: "Nas últimas duas semanas, você precisou tomar decisões complexas que lhe causaram ansiedade ou preocupação excessiva durante suas tarefas?",
+          type: "boolean",
           severity: "LEVEMENTE PREJUDICIAL",
           mitigationActions: [
             "Oferecer treinamento específico ou orientações práticas sobre como lidar com decisões complexas.",
@@ -33,6 +36,7 @@ export const formData: FormData = {
           id: 3,
           risk: "Interrupções e Interferências no Trabalho",
           text: "Sua atenção ficou prejudicada por exigências contínuas ou interrupções frequentes e injustificadas realizadas por um superior no trabalho?",
+          type: "boolean",
           severity: "PREJUDICIAL",
           mitigationActions: [
             "Definir horários específicos para comunicação ou reuniões com a chefia, reduzindo interrupções injustificadas.",
@@ -44,6 +48,7 @@ export const formData: FormData = {
           id: 4,
           risk: "Repressão Emocional no Ambiente de Trabalho",
           text: "Precisou esconder ou reprimir suas emoções por exigência direta ou indireta da chefia?",
+          type: "boolean",
           severity: "PREJUDICIAL",
           mitigationActions: [
             "Promover treinamentos para líderes sobre gestão emocional e comunicação empática.",
@@ -54,6 +59,7 @@ export const formData: FormData = {
       ]
     },
     {
+      id: "organizacao-gestao-trabalho",
       title: "Organização e Gestão do Trabalho",
       description: "Avalie os últimos 14 dias (últimas duas semanas)",
       questions: [
@@ -61,6 +67,7 @@ export const formData: FormData = {
           id: 5,
           risk: "Sobrecarga de Trabalho sem Aviso Prévio",
           text: "Precisou realizar horas extras ou jornadas mais longas do que o combinado inicialmente sem aviso prévio adequado, de forma a se sentir lesado, prejudicado ou agredido?",
+          type: "boolean",
           severity: "LEVEMENTE PREJUDICIAL",
           mitigationActions: [
             "Estabelecer políticas claras sobre realização e comunicação antecipada de horas extras.",
@@ -72,6 +79,7 @@ export const formData: FormData = {
           id: 6,
           risk: "Imposição de Mudanças de Turno",
           text: "Precisou alterar seu turno repentinamente, após ter solicitado expressamente ao superior que não fizesse essa mudança, e acabou cedendo por insistência dele, afetando negativamente sua rotina familiar ou descanso?",
+          type: "boolean",
           severity: "PREJUDICIAL",
           mitigationActions: [
             "Estabelecer e respeitar políticas claras sobre mudanças de turno com antecedência mínima obrigatória.",
@@ -83,6 +91,7 @@ export const formData: FormData = {
           id: 7,
           risk: "Falta de Clareza nas Atribuições",
           text: "Você pediu mais orientações ao seu superior sobre suas responsabilidades e atribuições e não as recebeu adequadamente nas últimas duas semanas?",
+          type: "boolean",
           severity: "LEVEMENTE PREJUDICIAL",
           mitigationActions: [
             "Definir claramente as responsabilidades e atribuições através de documentação ou reuniões periódicas.",
@@ -93,6 +102,7 @@ export const formData: FormData = {
       ]
     },
     {
+      id: "trabalho-ativo-desenvolvimento",
       title: "Trabalho Ativo e Desenvolvimento de Competências",
       description: "Avalie os últimos 14 dias (últimas duas semanas)",
       questions: [
@@ -100,6 +110,7 @@ export const formData: FormData = {
           id: 8,
           risk: "Limitação da Expressão e Participação",
           text: "Sentiu falta de oportunidade para expressar opiniões ou sugestões sobre como realizar suas atividades?",
+          type: "boolean",
           severity: "LEVEMENTE PREJUDICIAL",
           mitigationActions: [
             "Promover reuniões periódicas para ouvir sugestões e opiniões da equipe sobre processos de trabalho.",
@@ -111,6 +122,7 @@ export const formData: FormData = {
           id: 9,
           risk: "Sobrecarga e Falta de Pausas Adequadas",
           text: "Percebeu que não teve tempo suficiente para realizar pausas adequadas durante a jornada de trabalho?",
+          type: "boolean",
           severity: "PREJUDICIAL",
           mitigationActions: [
             "Revisar e reorganizar horários de trabalho, assegurando pausas periódicas adequadas.",
@@ -122,6 +134,7 @@ export const formData: FormData = {
           id: 10,
           risk: "Restrição de Inovação e Melhoria Contínua",
           text: "Você tentou realizar alguma tarefa que sua função exigia de forma mais eficiente ou aprimorada do que foi solicitado, mas não foi autorizado pelo superior nas últimas duas semanas?",
+          type: "boolean",
           severity: "LEVEMENTE PREJUDICIAL",
           mitigationActions: [
             "Estabelecer um ambiente aberto à inovação e sugestões dos funcionários.",
@@ -132,6 +145,7 @@ export const formData: FormData = {
       ]
     },
     {
+      id: "apoio-social-lideranca",
       title: "Apoio Social e Qualidade da Liderança",
       description: "Avalie os últimos 14 dias (últimas duas semanas)",
       questions: [
@@ -139,6 +153,7 @@ export const formData: FormData = {
           id: 11,
           risk: "Desrespeito e Desvalorização Profissional",
           text: "Alguma expressão ou atitude do seu superior fez você se sentir desrespeitado ou desvalorizado nas últimas duas semanas?",
+          type: "select",
           severity: "PREJUDICIAL",
           mitigationActions: [
             "Realizar treinamento regular para líderes sobre comunicação não violenta e respeito interpessoal.",
@@ -158,6 +173,7 @@ export const formData: FormData = {
           id: 12,
           risk: "Falta de Suporte da Liderança",
           text: "Pediu apoio ou esclarecimento ao superior direto e não foi atendido adequadamente?",
+          type: "boolean",
           severity: "LEVEMENTE PREJUDICIAL",
           mitigationActions: [
             "Estabelecer canais diretos e efetivos de comunicação entre funcionários e superiores.",
@@ -169,6 +185,7 @@ export const formData: FormData = {
           id: 13,
           risk: "Gestão Inadequada de Conflitos",
           text: "Presenciou ou sofreu conflito no trabalho sem que seu superior imediato tomasse providências adequadas?",
+          type: "boolean",
           severity: "PREJUDICIAL",
           mitigationActions: [
             "Capacitar gestores em técnicas de mediação e resolução de conflitos.",
@@ -180,6 +197,7 @@ export const formData: FormData = {
           id: 14,
           risk: "Isolamento e Falta de Apoio Social",
           text: "Sentiu-se isolado ou pouco apoiado por colegas?",
+          type: "boolean",
           severity: "LEVEMENTE PREJUDICIAL",
           mitigationActions: [
             "Incentivar a realização de atividades de integração e fortalecimento das relações interpessoais.",
@@ -190,6 +208,7 @@ export const formData: FormData = {
       ]
     },
     {
+      id: "compensacao-reconhecimento",
       title: "Compensação e Reconhecimento",
       description: "Avalie os últimos 28 dias (últimas quatro semanas)",
       questions: [
@@ -197,6 +216,7 @@ export const formData: FormData = {
           id: 15,
           risk: "Ameaças à Estabilidade no Trabalho",
           text: "Ouviu ameaças ou expressões explícitas do superior sugerindo risco de demissão, mesmo você realizando adequadamente suas tarefas nas últimas quatro semanas?",
+          type: "boolean",
           severity: "PREJUDICIAL",
           mitigationActions: [
             "Realizar investigação imediata e cuidadosa sobre a conduta do superior envolvido.",
@@ -208,6 +228,7 @@ export const formData: FormData = {
           id: 16,
           risk: "Mudanças Forçadas de Alocação",
           text: "Seu superior sugeriu ou comentou sobre possível transferência contra sua vontade?",
+          type: "boolean",
           severity: "LEVEMENTE PREJUDICIAL",
           mitigationActions: [
             "Estabelecer uma política transparente sobre transferências internas, com critérios claros e comunicação antecipada.",
@@ -219,6 +240,7 @@ export const formData: FormData = {
           id: 17,
           risk: "Falta de Reconhecimento Profissional",
           text: "Percebeu falta de reconhecimento verbal ou prático pelo trabalho realizado corretamente?",
+          type: "boolean",
           severity: "LEVEMENTE PREJUDICIAL",
           mitigationActions: [
             "Incentivar gestores a fornecer reconhecimento regular através de feedback positivo e construtivo.",
@@ -229,6 +251,7 @@ export const formData: FormData = {
       ]
     },
     {
+      id: "dupla-presenca",
       title: "Dupla Presença: Conflito Trabalho-Casa",
       description: "Avalie os últimos 14 dias (últimas duas semanas)",
       questions: [
@@ -236,6 +259,7 @@ export const formData: FormData = {
           id: 18,
           risk: "Interferência Trabalho-Família",
           text: "Nas últimas duas semanas, o empregador exigiu de forma impositiva que você realizasse tarefas profissionais em casa, ou descumpriu um combinado previamente acordado, como solicitar sua presença no trabalho em dias previamente informados como folga por motivos importantes (situações médicas, cuidados com filhos ou familiares doentes), causando prejuízo ou conflito entre trabalho e demandas familiares?",
+          type: "boolean",
           severity: "PREJUDICIAL",
           mitigationActions: [
             "Estabelecer políticas claras sobre a separação entre responsabilidades profissionais e tempo pessoal/familiar.",
@@ -246,6 +270,7 @@ export const formData: FormData = {
       ]
     },
     {
+      id: "assedio-moral-sexual",
       title: "Assédio Moral e Sexual",
       description: "Avalie os últimos 14 dias (últimas duas semanas)",
       questions: [
@@ -253,6 +278,7 @@ export const formData: FormData = {
           id: 19,
           risk: "Assédio Sexual",
           text: "Você sofreu ou presenciou alguma situação de assédio sexual dentro da empresa, como insinuações, toques indesejados ou comentários ofensivos com conotação sexual por parte de colegas ou superiores?",
+          type: "boolean",
           severity: "EXTREMAMENTE PREJUDICIAL",
           mitigationActions: [
             "Desligamento imediato do agressor da empresa após investigação e confirmação da denúncia.",
@@ -265,6 +291,7 @@ export const formData: FormData = {
           id: 20,
           risk: "Assédio Moral",
           text: "Você sofreu ou presenciou situação de assédio moral dentro da empresa nas últimas duas semanas?",
+          type: "select",
           severity: "EXTREMAMENTE PREJUDICIAL",
           mitigationActions: [
             "Criar um canal confidencial e seguro para denúncias de assédio moral.",

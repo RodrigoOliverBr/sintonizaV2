@@ -1,3 +1,4 @@
+
 import { FormTemplate } from '@/types/admin';
 import { FormSection, Question } from '@/types/form';
 import { v4 as uuidv4 } from 'uuid';
@@ -30,6 +31,16 @@ const MOCK_FORM_TEMPLATES: FormTemplate[] = [
     descricao: "Versão completa com seções adicionais para empresas de grande porte",
     dataCriacao: Date.now() - 30 * 24 * 60 * 60 * 1000,
     ultimaAtualizacao: Date.now() - 5 * 24 * 60 * 60 * 1000,
+    ativo: true,
+    padrao: false,
+    secoes: []
+  },
+  {
+    id: "form-004",
+    nome: "Avaliação de Riscos Psicossociais - Formulário Único",
+    descricao: "Questionário completo para avaliação e mitigação de riscos psicossociais no ambiente de trabalho",
+    dataCriacao: Date.now(),
+    ultimaAtualizacao: Date.now(),
     ativo: true,
     padrao: false,
     secoes: []
@@ -171,6 +182,7 @@ export const deleteSection = (
 
 // Fixed functions for managing questions
 export const addQuestion = (
+  templateId: string,
   sectionId: string, 
   questionData: Omit<Question, 'id' | 'risk' | 'severity' | 'mitigationActions'>
 ): Question => {
@@ -178,8 +190,8 @@ export const addQuestion = (
   const newQuestion: Question = {
     ...questionData,
     id: Date.now(), // Use timestamp as numeric ID
-    risk: 'Não definido',
-    severity: 'LEVEMENTE PREJUDICIAL',
+    risk: questionData.text.substring(0, 30) + "...", // Default risk name from question text
+    severity: 'LEVEMENTE PREJUDICIAL', // Default severity
     mitigationActions: []
   };
   
@@ -187,6 +199,7 @@ export const addQuestion = (
 };
 
 export const updateQuestion = (
+  templateId: string,
   sectionId: string, 
   question: Question
 ): Question => {
@@ -194,6 +207,7 @@ export const updateQuestion = (
 };
 
 export const deleteQuestion = (
+  templateId: string,
   sectionId: string, 
   questionId: number
 ): void => {
@@ -254,7 +268,7 @@ export const reorderQuestions = (
   const questionsMap = section.questions.reduce((acc, question) => {
     acc[question.id] = question;
     return acc;
-  }, {} as Record<number, FormQuestion>);
+  }, {} as Record<number, Question>);
 
   // Reordenar as perguntas conforme a ordem fornecida
   section.questions = orderedQuestionIds.map(id => {

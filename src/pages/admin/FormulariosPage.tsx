@@ -24,6 +24,7 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { formData } from "@/data/formData";
 
 const FormulariosPage = () => {
   const [formTemplates, setFormTemplates] = useState<FormTemplate[]>([]);
@@ -36,9 +37,10 @@ const FormulariosPage = () => {
   const [newSectionDescription, setNewSectionDescription] = useState("");
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
   const [newQuestionText, setNewQuestionText] = useState("");
-  const [newQuestionType, setNewQuestionType] = useState("text");
+  const [newQuestionType, setNewQuestionType] = useState("boolean");
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [selectedSectionId, setSelectedSectionId] = useState<string>("");
 
   useEffect(() => {
     loadFormTemplates();
@@ -76,6 +78,56 @@ const FormulariosPage = () => {
     setFormName("");
     setFormDescription("");
     toast.success("Formulário criado com sucesso!");
+  };
+
+  const handleCreatePsychoSocialForm = () => {
+    // Find the form template
+    const template = formTemplates.find(t => t.nome === "Avaliação de Riscos Psicossociais - Formulário Único");
+    
+    if (!template) {
+      toast.error("Formulário não encontrado!");
+      return;
+    }
+
+    // Add all sections from formData to the template
+    formData.sections.forEach(section => {
+      const newSection = addSection(template.id, {
+        title: section.title,
+        description: section.description,
+        questions: [] as Question[]
+      });
+
+      // Get the added section
+      const addedSection = newSection.secoes.find(s => s.title === section.title);
+      
+      if (addedSection) {
+        // Add all questions to the section
+        const updatedQuestions = [...addedSection.questions];
+        
+        section.questions.forEach(question => {
+          updatedQuestions.push({
+            id: question.id,
+            text: question.text,
+            type: question.type,
+            risk: question.risk,
+            severity: question.severity,
+            mitigationActions: question.mitigationActions,
+            options: question.options,
+            showObservation: question.showObservation
+          });
+        });
+        
+        // Update the section with the questions
+        updateSection(template.id, {
+          ...addedSection,
+          questions: updatedQuestions
+        });
+      }
+    });
+    
+    // Reload form templates
+    loadFormTemplates();
+    toast.success("Formulário de riscos psicossociais criado com sucesso!");
   };
 
   const handleUpdateFormTemplate = () => {
@@ -155,10 +207,14 @@ const FormulariosPage = () => {
     }
 
     // First create the question
-    const newQuestion = addQuestion(sectionId, { 
-      text: newQuestionText, 
-      type: newQuestionType 
-    });
+    const newQuestion = addQuestion(
+      selectedTemplate.id,
+      sectionId, 
+      { 
+        text: newQuestionText, 
+        type: newQuestionType 
+      }
+    );
     
     // Then add it to the section
     const section = selectedTemplate.secoes.find(sec => sec.id === sectionId);
@@ -171,7 +227,7 @@ const FormulariosPage = () => {
     }
     
     setNewQuestionText("");
-    setNewQuestionType("text");
+    setNewQuestionType("boolean");
     setIsAddingQuestion(false);
     toast.success("Pergunta adicionada com sucesso!");
   };
@@ -275,7 +331,16 @@ const FormulariosPage = () => {
                   </li>
                 ))}
               </ul>
-              <Button onClick={() => setIsEditingTemplate(true)}>Adicionar Formulário</Button>
+              <div className="flex gap-2 mt-4">
+                <Button onClick={() => setIsEditingTemplate(true)}>Adicionar Formulário</Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleCreatePsychoSocialForm}
+                  title="Cria o formulário completo de riscos psicossociais a partir do modelo pré-definido"
+                >
+                  Criar Formulário de Riscos Psicossociais
+                </Button>
+              </div>
             </div>
 
             {/* Detalhes do Formulário e Seções */}
@@ -375,9 +440,14 @@ const FormulariosPage = () => {
                                             >
                                               <div className="flex items-center">
                                                 <GripVertical className="mr-2 h-4 w-4 cursor-grab" />
-                                                {question.text} ({question.type})
+                                                <div>
+                                                  <p>{question.text}</p>
+                                                  <p className="text-xs text-gray-500">
+                                                    Tipo: {question.type} | Severidade: {question.severity}
+                                                  </p>
+                                                </div>
                                               </div>
-                                              <div>
+                                              <div className="flex space-x-1">
                                                 <Button
                                                   variant="outline"
                                                   size="icon"
@@ -408,7 +478,10 @@ const FormulariosPage = () => {
                                 <Button
                                   variant="secondary"
                                   size="sm"
-                                  onClick={() => setIsAddingQuestion(true)}
+                                  onClick={() => {
+                                    setSelectedSectionId(section.id);
+                                    setIsAddingQuestion(true);
+                                  }}
                                 >
                                   Adicionar Pergunta
                                 </Button>
@@ -482,9 +555,9 @@ const FormulariosPage = () => {
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="boolean">Sim/Não</SelectItem>
                   <SelectItem value="text">Texto</SelectItem>
                   <SelectItem value="number">Número</SelectItem>
-                  <SelectItem value="date">Data</SelectItem>
                   <SelectItem value="select">Seleção</SelectItem>
                 </SelectContent>
               </Select>
@@ -494,10 +567,10 @@ const FormulariosPage = () => {
                 Cancelar
               </Button>
               <Button onClick={() => {
-                if (selectedTemplate && selectedTemplate.secoes.length > 0) {
-                  handleAddQuestionToSection(selectedTemplate.secoes[0].id);
+                if (selectedTemplate && selectedSectionId) {
+                  handleAddQuestionToSection(selectedSectionId);
                 } else {
-                  toast.error("Adicione uma seção antes de adicionar uma pergunta.");
+                  toast.error("Selecione uma seção antes de adicionar uma pergunta.");
                 }
               }}>Adicionar Pergunta</Button>
             </div>
@@ -558,9 +631,9 @@ const FormulariosPage = () => {
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="boolean">Sim/Não</SelectItem>
                   <SelectItem value="text">Texto</SelectItem>
                   <SelectItem value="number">Número</SelectItem>
-                  <SelectItem value="date">Data</SelectItem>
                   <SelectItem value="select">Seleção</SelectItem>
                 </SelectContent>
               </Select>

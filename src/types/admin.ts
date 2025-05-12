@@ -1,5 +1,4 @@
-
-export type ClienteStatus = 'liberado' | 'bloqueado';
+export type ClienteStatus = 'liberado' | 'bloqueado' | 'pendente';
 export type TipoPessoa = 'fisica' | 'juridica';
 export type StatusContrato = 'ativo' | 'em-analise' | 'cancelado';
 export type CicloFaturamento = 'mensal' | 'trimestral' | 'anual';

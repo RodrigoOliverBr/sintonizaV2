@@ -40,7 +40,7 @@ const MOCK_CLIENTES: Cliente[] = [
     tipo: "juridica",
     numeroEmpregados: 50,
     dataInclusao: Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 dias atrás
-    situacao: "liberado", // liberado, pendente, bloqueado
+    situacao: "liberado", // liberado, bloqueado
     cpfCnpj: "12.345.678/0001-90",
     telefone: "(11) 98765-4321",
     endereco: "Rua Exemplo, 123",
@@ -57,7 +57,7 @@ const MOCK_CLIENTES: Cliente[] = [
     tipo: "juridica",
     numeroEmpregados: 120,
     dataInclusao: Date.now() - 45 * 24 * 60 * 60 * 1000, // 45 dias atrás
-    situacao: "pendente",
+    situacao: "liberado", // Changed from "pendente" to "liberado"
     cpfCnpj: "45.678.901/0001-23",
     telefone: "(11) 91234-5678",
     endereco: "Av. Industrial, 500",
@@ -298,9 +298,25 @@ export const checkCredentials = (email: string, password: string) => {
   return { isValid: false };
 };
 
-// Cliente Functions
+// Helper function to get client's plan name from contracts
+export const getClientePlanName = (clienteId: string): string => {
+  const contrato = MOCK_CONTRATOS.find(c => c.clienteId === clienteId && c.status === 'ativo');
+  if (contrato) {
+    const plano = MOCK_PLANOS.find(p => p.id === contrato.planoId);
+    return plano ? plano.nome : 'Sem plano';
+  }
+  return 'Sem plano';
+};
+
+// Clientes Functions
 export const getClientes = (): Cliente[] => {
-  return MOCK_CLIENTES;
+  return MOCK_CLIENTES.map(cliente => {
+    const planoNome = getClientePlanName(cliente.id);
+    return {
+      ...cliente,
+      plano: planoNome
+    };
+  });
 };
 
 export const getClienteById = (clienteId: string): Cliente | undefined => {
